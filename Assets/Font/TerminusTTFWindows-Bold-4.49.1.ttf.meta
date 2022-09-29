@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: d9b9218a6da72fe45b1fbec44ea071ca
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Terminus (TTF) for Windows
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: d81f3639f438ada408f6d9da7ee4da38, type: 3}
+  customCharacters: 
+  fontRenderingMode: 2
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

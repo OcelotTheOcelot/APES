@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CS0282: There is no defined ordering between fields in multiple declarations of partial struct
+dotnet_diagnostic.CS0282.severity = none
