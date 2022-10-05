@@ -32,7 +32,7 @@ namespace Verse
 		{
 			base.OnStartRunning();
 
-			var controls = GetSingleton<SandboxData.Controls>();
+			var controls = GetSingleton<Sandbox.Controls>();
 
 			cameraMoveSpeed = controls.cameraMoveSpeed;
 			cameraDragSpeed = controls.cameraPanningSpeed;
@@ -40,8 +40,8 @@ namespace Verse
 			cameraZoomSmoothing = controls.cameraZoomSmoothing;
 			cameraMoveSpeedZoomCorrection = controls.cameraMoveSpeedZoomCorrection;
 
-			Vector2Int regionCount = GetSingleton<SpaceData.Initialization>().regionCount;
-			SpaceData.Size spaceSize = GetSingleton<SpaceData.Size>();
+			Vector2Int regionCount = GetSingleton<Space.Initialization>().regionCount;
+			Space.Size spaceSize = GetSingleton<Space.Size>();
 
 			CameraController.Instance.transform.position = spaceSize.regionSize * .5f * (Vector2)regionCount / spaceSize.cellsPerMeter;
 		}
@@ -50,7 +50,7 @@ namespace Verse
 		{
 			SandboxUI.Instance.CursorPositionText = $"[{SpaceCursorSystem.Coord.x}; {SpaceCursorSystem.Coord.y}]";
 
-			float delta = Time.DeltaTime;
+			float delta = World.Time.DeltaTime;
 
 			InputMove(Actions.Sandbox.MoveCamera.ReadValue<Vector2>(), delta);
 			InputZoom(Actions.Sandbox.ZoomCamera.ReadValue<float>(), delta);

@@ -4,14 +4,14 @@ using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
+using System.Linq;
+
 namespace Verse
 {
 	[UpdateInGroup(typeof(WorldTickSystemGroup))]
-	[UpdateAfter(typeof(RegionTextureProcessingSystem))]
 	public partial class AtomPhysicsSystem : SystemBase
 	{
 		private EntityQuery chunkQuery;
-		private Entity space;
 
 		private readonly int processingBatches = 4;
 		protected override void OnCreate()
@@ -19,92 +19,109 @@ namespace Verse
 			base.OnCreate();
 
 			chunkQuery = GetEntityQuery(
-				typeof(ChunkData.DirtyArea),
-				ComponentType.ReadOnly<ChunkData.ProcessingBatchIndex>()
+				//ComponentType.ReadWrite<Chunk.DirtyArea>(),
+				ComponentType.ReadOnly<Chunk.ProcessingBatchIndex>()
 			);
-			chunkQuery.AddSharedComponentFilter(new ChunkData.ProcessingBatchIndex(-1));
+			chunkQuery.AddSharedComponentFilter(new Chunk.ProcessingBatchIndex(-1));
 		}
 
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
-
-			space = GetSingletonEntity<SpaceData.Initialization>();
 		}
 
 		protected override void OnUpdate()
 		{
 			int tick = TickerSystem.CurrentTick;
 
+			var matters = GetComponentLookup<Atom.Matter>(isReadOnly: true);
+			var states = GetComponentLookup<Matter.AtomState>(isReadOnly: true);
+			var physProps = GetComponentLookup<Matter.PhysicProperties>(isReadOnly: true);
+			var dirtyAreas = GetComponentLookup<Chunk.DirtyArea>();
+			var atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>();
 			for (int i = 0; i < processingBatches; i++)
 			{
-				chunkQuery.SetSharedComponentFilter(new ChunkData.ProcessingBatchIndex { batchIndex = i });
+				chunkQuery.SetSharedComponentFilter(new Chunk.ProcessingBatchIndex { batchIndex = i });
 
 				new ProcessChunkJob
 				{
 					tick = tick,
-					space = space
-				}.ScheduleParallel(chunkQuery).Complete();
+					matters = matters,
+					states = states,
+					physicProperties = physProps,
+					dirtyAreas = dirtyAreas,
+					atomBuffers = atomBuffers
+				}.Schedule(chunkQuery, Dependency).Complete();
 			}
 		}
 
+		[BurstCompile]
 		public partial struct ProcessChunkJob : IJobEntity
 		{
 			[ReadOnly]
 			public int tick;
-
 			[ReadOnly]
-			public Entity space;
+			public ComponentLookup<Atom.Matter> matters;
+			[ReadOnly]
+			public ComponentLookup<Matter.AtomState> states;
+			[ReadOnly]
+			public ComponentLookup<Matter.PhysicProperties> physicProperties;
 
-			private Entity chunk;
+			[NativeDisableParallelForRestriction]
+			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
+			public ComponentLookup<Chunk.DirtyArea> dirtyAreas;
 
 			public void Execute(
 				Entity chunk,
-				ref ChunkData.DirtyArea dirtyArea,
-				in ChunkData.Neighbours neighbours,
-				ref DynamicBuffer<ChunkData.AtomBufferElement> atoms
+				in Chunk.Neighbourhood neighbours
 			)
 			{
+				Chunk.DirtyArea dirtyArea = dirtyAreas[chunk];
+
 				if (!dirtyArea.active)
 					return;
 				dirtyArea.active = false;
 
-				this.chunk = chunk;
+				DynamicBuffer<Chunk.AtomBufferElement> atoms = atomBuffers[chunk];
 
-				EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-
-				foreach (Vector2Int coord in dirtyArea.GetSnake(tick))
+				Chunk.DirtyArea copiedArea = dirtyArea;
+				foreach (Vector2Int coord in copiedArea.GetSnake(tick))
 				{
 					Entity atom = atoms.GetAtom(coord);
 					if (atom == Entity.Null)
 						continue;
 
-					ProcessAtom(entityManager, atoms, neighbours, atom, coord);
+					if (atom.Index < 0)
+						continue;
+
+					ProcessAtom(ref dirtyArea, atoms, neighbours, atom, coord);
 				}
+
+				dirtyAreas[chunk] = dirtyArea;
 			}
 
 			private void ProcessAtom(
-				EntityManager entityManager,
-				DynamicBuffer<ChunkData.AtomBufferElement> atoms,
-				ChunkData.Neighbours neighbours, 
+				ref Chunk.DirtyArea dirtyArea,
+				DynamicBuffer<Chunk.AtomBufferElement> atoms,
+				Chunk.Neighbourhood neighbours,
 				Entity atom,
 				Vector2Int atomCoord
 			)
 			{
-				Entity atomMatter = Atom.GetMatter(entityManager, atom);
-				MatterState state = Matter.GetState(entityManager, atomMatter);
-				MatterData.PhysicProperties physProps = Matter.GetPhysicalProperties(entityManager, atomMatter);
+				Entity matter = matters[atom].matter;
+				Matter.State state = states[matter].state;
+				Matter.PhysicProperties physProps = physicProperties[matter];
 
 				switch (state)
 				{
-					case MatterState.Solid:
+					case Matter.State.Solid:
 						break;
 
-					case MatterState.Liquid:
-						ProcessLiquid(entityManager, atoms, neighbours, atom, atomMatter, physProps, atomCoord);
+					case Matter.State.Liquid:
+						ProcessLiquid(ref dirtyArea, atoms, neighbours, atom, matter, physProps, atomCoord);
 						break;
 
-					case MatterState.Gaseous:
+					case Matter.State.Gaseous:
 						break;
 
 					default:
@@ -113,45 +130,47 @@ namespace Verse
 			}
 
 			private void ProcessLiquid(
-				EntityManager dstManager,
-				DynamicBuffer<ChunkData.AtomBufferElement> atoms,
-				ChunkData.Neighbours neighbours,
+				ref Chunk.DirtyArea dirtyArea,
+				DynamicBuffer<Chunk.AtomBufferElement> atoms,
+				Chunk.Neighbourhood neighbours,
 				Entity atom,
 				Entity atomMatter,
-				MatterData.PhysicProperties atomProps,
+				Matter.PhysicProperties atomProps,
 				Vector2Int atomCoord
 			)
 			{
 				foreach (Vector2Int pendulumCoord in Enumerators.GetHalfPendulum(atomCoord, tick))
 				{
 					if (!atoms.GetAtomNeighbourFallback(
-							dstManager,
+							atomBuffers,
 							neighbours,
 							pendulumCoord,
 							out Entity otherAtom,
-							out DynamicBuffer<ChunkData.AtomBufferElement> otherAtoms,
+							out DynamicBuffer<Chunk.AtomBufferElement> otherAtoms,
 							out Vector2Int otherCoord
 						))
 						continue;
 
 					if (otherAtom != Entity.Null)
 					{
-						Entity otherMatter = Atom.GetMatter(dstManager, otherAtom);
+						Entity otherMatter = matters[otherAtom].matter;
 						if (atomMatter == otherMatter)
 							continue;
 
-						if (Matter.GetState(dstManager, otherMatter) == MatterState.Solid)
+						if (states[otherMatter].state == Matter.State.Solid)
 							continue;
 
-						MatterData.PhysicProperties otherProps = Matter.GetPhysicalProperties(dstManager, otherMatter);
+						Matter.PhysicProperties otherProps = physicProperties[otherMatter];
 						if (atomProps.density <= otherProps.density)
 							continue;
 					}
 
 					AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
 
-					RectInt dirtyRect = RectExtension.CreateRectBetween(atomCoord, otherCoord, margin: 1, additiveSize: 1);
-					Space.MarkDirty(dstManager, space, dirtyRect, safe: true);
+					RectInt dirtyRect = RectExtension.CreateRectBetween(atomCoord, pendulumCoord, margin: 1);
+
+					dirtyArea.MarkDirty(dirtyRect, safe: true);
+					neighbours.MarkDirty(dirtyAreas, dirtyRect, safe: true);
 
 					break;
 				}

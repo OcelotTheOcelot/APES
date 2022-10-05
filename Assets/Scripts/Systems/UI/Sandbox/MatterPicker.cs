@@ -27,7 +27,7 @@ namespace Apes.UI
 
 		private void AddMatter(EntityManager entityManager, string id, Entity matter)
 		{
-			string groupId = entityManager.GetComponentData<MatterData.Group>(matter).group.ToString();
+			string groupId = entityManager.GetComponentData<Matter.Group>(matter).group.ToString();
 
 			if (!groups.TryGetValue(groupId, out MatterGroup group))
 			{

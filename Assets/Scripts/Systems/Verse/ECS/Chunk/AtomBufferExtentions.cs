@@ -1,30 +1,30 @@
 using UnityEngine;
 using Unity.Entities;
-using static Verse.ChunkData;
+using static Verse.Chunk;
 
 namespace Verse
 {
 	public static class AtomBufferExtention
 	{
-		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX];
+		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY) => atoms[chunkCoordY * Space.ChunkSize + chunkCoordX];
 		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, Vector2Int chunkCoord) => atoms.GetAtom(chunkCoord.x, chunkCoord.y);
 
-		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY, Entity atom) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX] = atom;
+		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY, Entity atom) => atoms[chunkCoordY * Space.ChunkSize + chunkCoordX] = atom;
 		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, Vector2Int chunkCoord, Entity atom) => atoms.SetAtom(chunkCoord.x, chunkCoord.y, atom);
 
 		public static bool GetAtomNeighbourFallback(
 			this DynamicBuffer<AtomBufferElement> atoms,
-			EntityManager entityManager,
-			Neighbours neighbours,
+			BufferLookup<AtomBufferElement> atomBuffers,
+			Neighbourhood neighbours,
 			Vector2Int chunkCoord,
 			out Entity neighbourAtom,
 			out DynamicBuffer<AtomBufferElement> neighbourAtoms,
 			out Vector2Int neighbourCoord
 		)
 		{
-			int chunkSize = Space.chunkSize;
-			neighbourCoord = chunkCoord;
+			int chunkSize = Space.ChunkSize;
 			neighbourAtoms = atoms;
+			neighbourCoord = chunkCoord;
 			Entity neighbour;
 
 			if (chunkCoord.x >= chunkSize)
@@ -45,7 +45,7 @@ namespace Verse
 					neighbour = neighbours.East;
 				}
 
-				return SafeGetAtomFromPotentialChunk(entityManager, neighbour, neighbourCoord, out neighbourAtom, ref atoms);
+				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 
 			if (chunkCoord.x < 0)
@@ -66,32 +66,31 @@ namespace Verse
 					neighbour = neighbours.West;
 				}
 
-				return SafeGetAtomFromPotentialChunk(entityManager, neighbour, neighbourCoord, out neighbourAtom, ref atoms);
+				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 
 			if (chunkCoord.y >= chunkSize)
 			{
 				neighbourCoord.y -= chunkSize;
-				return SafeGetAtomFromPotentialChunk(entityManager, neighbours.North, neighbourCoord, out neighbourAtom, ref atoms);
+				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.North, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 			
 			if (chunkCoord.y < 0)
 			{
 				neighbourCoord.y += chunkSize;
-				return SafeGetAtomFromPotentialChunk(entityManager, neighbours.South, neighbourCoord, out neighbourAtom, ref atoms);
+				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 
-			neighbourAtoms = atoms;
 			neighbourAtom = atoms.GetAtom(chunkCoord);
 			return true;
 		}
 
 		private static bool SafeGetAtomFromPotentialChunk(
-			EntityManager entityManager,
+			BufferLookup<AtomBufferElement> atomBuffers,
 			Entity chunk,
 			Vector2Int chunkCoord,
-			out Entity atom,
-			ref DynamicBuffer<AtomBufferElement> atoms
+			ref DynamicBuffer<AtomBufferElement> atoms,
+			out Entity atom
 		)
 		{
 			if (chunk == Entity.Null)
@@ -101,9 +100,19 @@ namespace Verse
 				return false;
 			}
 
-			atoms = entityManager.GetBuffer<AtomBufferElement>(chunk);
+			atoms = atomBuffers[chunk];
 			atom = atoms.GetAtom(chunkCoord);
 			return true;
+		}
+
+		public static void Swap(
+			this DynamicBuffer<AtomBufferElement> atoms,
+			Vector2Int coordA, Vector2Int coordB
+		)
+		{
+			Entity atom = atoms.GetAtom(coordA);
+			atoms.SetAtom(coordA, atoms.GetAtom(coordB));
+			atoms.SetAtom(coordB, atom);
 		}
 
 		public static void Swap(
@@ -114,15 +123,6 @@ namespace Verse
 			Entity atom = atomsA.GetAtom(coordA);
 			atomsA.SetAtom(coordA, atomsB.GetAtom(coordB));
 			atomsB.SetAtom(coordB, atom);
-		}
-
-		public static void Swap(
-			this DynamicBuffer<AtomBufferElement> atoms, Vector2Int coordA, Vector2Int coordB
-		)
-		{
-			Entity atom = atoms.GetAtom(coordA);
-			atoms.SetAtom(coordA, atoms.GetAtom(coordB));
-			atoms.SetAtom(coordB, atom);
 		}
 	}
 }

@@ -31,7 +31,7 @@ namespace Apes.UI
 		{
 			base.Awake();
 
-			paintingSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystem<SandboxPaintingSystem>();
+			paintingSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<SandboxPaintingSystem>();
 		}
 
 		public void AssignMatter(Entity matter, string id)
@@ -39,7 +39,7 @@ namespace Apes.UI
 			this.matter = matter;
 
 			text.text = id;
-			image.color = paintingSystem.EntityManager.GetBuffer<MatterData.ColorBufferElement>(matter)[0];
+			image.color = paintingSystem.EntityManager.GetBuffer<Matter.ColorBufferElement>(matter)[0];
 		}
 
 		public void OnPointerEnter(PointerEventData eventData)
@@ -54,7 +54,7 @@ namespace Apes.UI
 
 		public void PickMatter()
 		{
-			paintingSystem.SetSingleton(new SandboxData.PaintingMatter { matter = matter });
+			paintingSystem.SetSingleton(new Sandbox.Painting.Matter { matter = matter });
 		}
 	}
 }

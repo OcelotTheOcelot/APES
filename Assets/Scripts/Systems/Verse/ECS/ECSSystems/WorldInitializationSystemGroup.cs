@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Verse
 {
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
-    public class WorldInitializationSystemGroup : ComponentSystemGroup
+    public class SpaceInitializationSystemGroup : ComponentSystemGroup
     {
 	}
 }

@@ -32,15 +32,17 @@ namespace Verse
 		{
 			Vector2 cursorPos = actions.Global.Position.ReadValue<Vector2>();
 
-			Entities.WithAll<SpaceData.Size>().ForEach(
-				(in Translation translation, in SpaceData.Size sizeData) =>
+			Camera camera = Camera.main;
+
+			Entities.WithAll<Space.Size>().ForEach(
+				(in LocalToWorldTransform transform, in Space.Size sizeData) =>
 				{
 					Coord = Space.WorldToSpace(
-						translation, sizeData,
-						Camera.main.ScreenToWorldPoint(cursorPos)
+						transform, sizeData,
+						camera.ScreenToWorldPoint(cursorPos)
 					);
 				}
-			).Run();
+			).WithoutBurst().Run();
 		}
 	}
 }

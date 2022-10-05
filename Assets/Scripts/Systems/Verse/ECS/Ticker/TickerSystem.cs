@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 using Verse;
 
-public class TickerSystem : ComponentSystem
+public partial class TickerSystem : SystemBase
 {
 	private static float nextTick;
 	private static float secondsPerTick;
@@ -16,13 +16,13 @@ public class TickerSystem : ComponentSystem
 	{
 		base.OnStartRunning();
 
-		group = World.GetExistingSystem<WorldTickSystemGroup>();
-		secondsPerTick = 1f / GetSingleton<TickRateData>().ticksPerSecond;
+		group = World.GetExistingSystemManaged<WorldTickSystemGroup>();
+		secondsPerTick = 1f / GetSingleton<TickRate>().ticksPerSecond;
 	}
 
 	protected override void OnUpdate()
 	{
-		float time = (float)Time.ElapsedTime;
+		float time = (float)World.Time.ElapsedTime;
 
 		if (time < nextTick)
 			return;

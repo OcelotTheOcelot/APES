@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Unity.Entities;
 using UnityEngine;
 
@@ -70,14 +71,15 @@ public static class Utils
 	/// <returns>A random element from the array</returns>
 	public static T Pick<T>(T[] arr) => arr[Random.Range(0, arr.Length)];
 
-    public static T Pick<T>(DynamicBuffer<T> buffer) where T : struct => buffer[Random.Range(0, buffer.Length)];
+	public static T Pick<T>(this DynamicBuffer<T> buffer) where T : unmanaged, IBufferElementData =>
+		buffer[Apes.Random.FastRandom.GlobalInstance.Range(0, buffer.Length - 1)];
 
-    /// <summary>
-    /// Searches for child transform of transfrom parent with given name.
-    /// </summary>
-    /// <param name="parent">Start point of the search.</param>
-    /// <param name="name">The name of the game object to find.</param>
-    public static Transform FindChildRecursively(Transform parent, string name)
+	/// <summary>
+	/// Searches for child transform of transfrom parent with given name.
+	/// </summary>
+	/// <param name="parent">Start point of the search.</param>
+	/// <param name="name">The name of the game object to find.</param>
+	public static Transform FindChildRecursively(Transform parent, string name)
 	{
 		if (parent.name.Equals(name))
 			return parent;

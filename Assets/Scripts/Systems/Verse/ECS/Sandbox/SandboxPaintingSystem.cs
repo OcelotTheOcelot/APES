@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
 using Apes.Input;
+using Apes.UI;
 
 namespace Verse
 {
@@ -10,29 +11,35 @@ namespace Verse
 
 		private Entity space;
 
+		private BufferLookup<Chunk.AtomBufferElement> atomBuffers;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
 			Actions.Sandbox.BrushSize.performed += (ctx) => InputBrushSize(ctx.ReadValue<float>());
+
+			atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>();
 		}
 
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
 
-			space = GetSingletonEntity<SpaceData.Size>();
+			space = GetSingletonEntity<Space.Size>();
+
+			SetSingleton(new Sandbox.Painting.Matter { matter = MatterLibrary.Get("water") });
 		}
 
 		protected override void OnUpdate()
 		{
 			if (Actions.Sandbox.Paint.ReadValue<float>() > 0f)
 			{
-				Paint(SpaceCursorSystem.Coord, GetSingleton<SandboxData.Brush>().size, GetSingleton<SandboxData.PaintingMatter>().matter);
+				Paint(SpaceCursorSystem.Coord, GetSingleton<Sandbox.Painting.Brush>().size, GetSingleton<Sandbox.Painting.Matter>().matter);
 			}
 			else if (Actions.Sandbox.Clear.ReadValue<float>() > 0f)
 			{
-				Erase(SpaceCursorSystem.Coord, GetSingleton<SandboxData.Brush>().size);
+				Erase(SpaceCursorSystem.Coord, GetSingleton<Sandbox.Painting.Brush>().size);
 			}
 		}
 
@@ -49,13 +56,10 @@ namespace Verse
 
 		public void Erase(Vector2Int center, int brushSize)
 		{
-			//foreach (Vector2Int coord in Enumerators.GetCircle(center: center, radius: brushSize))
-			//{
-			//    if (space.HasCoord(coord) && space[coord])
-			//        space.DestroyAtom(coord, updatePhysics: false, updateTexture: false);
-			//}
+			foreach (Vector2Int spaceCoord in Enumerators.GetCircle(center: center, radius: brushSize))
+				Space.RemoveAtom(EntityManager, space, spaceCoord);
 
-			//UpdateBrushSquare(center);
+			UpdateBrushSquare(center, brushSize);
 		}
 
 		private void UpdateBrushSquare(Vector2Int center, int brushSize)
@@ -75,13 +79,18 @@ namespace Verse
 
 		private void InputBrushSize(float inputValue)
 		{
-			int size = GetSingleton<SandboxData.Brush>().size;
-			size = Mathf.Clamp(size + (int)Mathf.Sign(inputValue), 0, Space.chunkSize);
-			SetSingleton(new SandboxData.Brush { size = size });
+			int size = GetSingleton<Sandbox.Painting.Brush>().size;
+			size = Mathf.Clamp(size + (int)Mathf.Sign(inputValue), 0, Space.ChunkSize);
+			SetSingleton(new Sandbox.Painting.Brush { size = size });
 		}
 
 		public partial struct PaintJob : IJobEntity
 		{
+		}
+
+		public partial struct EraseJob : IJobEntity
+		{
+
 		}
 	}
 }

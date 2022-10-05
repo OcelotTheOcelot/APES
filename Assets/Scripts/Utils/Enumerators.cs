@@ -2,6 +2,7 @@ using Apes.Random;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Entities.UniversalDelegates;
 using UnityEngine;
 
 public static class Enumerators
@@ -86,10 +87,10 @@ public static class Enumerators
 	public static IEnumerable<int> GetFlatSnake(int from, int to, int snakeWidth, bool leftToRight = true)
 	{
 		throw new NotImplementedException();
-    }
+	}
 
 
-    public static IEnumerable<Vector2Int> GetCircle(int radius, Vector2Int center)
+	public static IEnumerable<Vector2Int> GetCircle(int radius, Vector2Int center)
 	{
 		if (radius == 0)
 		{
@@ -135,15 +136,16 @@ public static class Enumerators
 	/// Basically, a call to GetPendulum(2) – it should be more efficient without any conditioning.
 	/// </summary>
 	/// <returns></returns>
-	public static IEnumerable<Vector2Int> GetHalfPendulum(Vector2Int center, int direction)
+	public static IEnumerable<Vector2Int> GetHalfPendulum(Vector2Int center, int tick)
 	{
-		yield return center + Vector2Int.down;
+		yield return new Vector2Int(center.x, center.y - 1);
 
-		for (int i = -1; i <= 0; i++)
-		{
-			yield return center + new Vector2Int(direction, i);
-			yield return center + new Vector2Int(-direction, i);
-		}
+		int direction = ((tick & 1) << 1) - 1;
+		
+		yield return new Vector2Int(center.x + direction, center.y - 1);
+		yield return new Vector2Int(center.x - direction, center.y - 1);
+		yield return new Vector2Int(center.x + direction, center.y);
+		yield return new Vector2Int(center.x - direction, center.y);
 	}
 
 	/// <summary>
@@ -161,12 +163,30 @@ public static class Enumerators
 	}
 
 	/// <summary>
-	/// 2 3
-	/// 0 1
+	/// 3 2 1
+	/// 4 x 0
+	/// 5 6 7
 	/// </summary>
-	/// <param name="rect"></param>
 	/// <returns></returns>
-	public static IEnumerable<Vector2Int> GetCorners(RectInt rect)
+	public static IEnumerable<Vector2Int> GetARound(Vector2Int center)
+	{
+		yield return center + Vector2Int.right;
+		yield return center + Vector2Int.one;
+		yield return center + Vector2Int.up;
+		yield return center + new Vector2Int(-1, 1);
+        yield return center + Vector2Int.left;
+        yield return center - Vector2Int.one;
+        yield return center + Vector2Int.down;
+        yield return center + new Vector2Int(1, -1);
+    }
+
+    /// <summary>
+    /// 2 3
+    /// 0 1
+    /// </summary>
+    /// <param name="rect"></param>
+    /// <returns></returns>
+    public static IEnumerable<Vector2Int> GetCorners(RectInt rect)
 	{
 		yield return rect.min;
 		yield return new Vector2Int(rect.xMax, rect.yMin);

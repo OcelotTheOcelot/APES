@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -11,109 +12,131 @@ using UnityEngine.InputSystem.Interactions;
 
 namespace Verse.WorldGen
 {
-	[UpdateInGroup(typeof(WorldInitializationSystemGroup))]
+	[UpdateInGroup(typeof(SpaceInitializationSystemGroup))]
 	[UpdateAfter(typeof(SpaceInitializationSystem))]
-	public class WorldGenSystem : ComponentSystem
+	public partial class WorldGenSystem : SystemBase
 	{
-		private float[] noise;
+		private EndSimulationEntityCommandBufferSystem endSimulationEntityCommandBufferSystem;
 
-		private TerrainGenerationData terrainGenerationData;
+		private EntityQuery regionQuery;
+		private NativeArray<float> noise;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
+
+			regionQuery = GetEntityQuery(
+				ComponentType.ReadOnly<Region.SpatialIndex>(),
+				ComponentType.ReadOnly<Region.Processing>()
+			);
+			regionQuery.AddSharedComponentFilter(new Region.Processing { state = Region.Processing.State.PendingGeneration });
+
+			endSimulationEntityCommandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
 		}
 
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
 
-			noise = new float[Space.regionSize];
+			noise = new NativeArray<float>(Space.RegionSize, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
-			terrainGenerationData = GetSingleton<TerrainGenerationData>();
-			EntityQuery query = Entities
-			.WithAll<RegionData.SpatialIndex>()
-			.WithAll<RegionData.Processing>()
-				.ToEntityQuery();
-			query.AddSharedComponentFilter(new RegionData.Processing { state = RegionData.Processing.State.PendingGeneration });
+			EntityCommandBuffer commandBuffer = GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+			var handle = new GenerateRegionJob()
+			{
+				terrainGenerationData = GetSingleton<TerrainGenerationData>(),
 
-			NativeArray<Entity> regions = query.ToEntityArray(Allocator.Temp);
-			NativeArray<RegionData.SpatialIndex> chunkGridPositions = query.ToComponentDataArray<RegionData.SpatialIndex>(Allocator.Temp);
-
-			for (int i = 0; i < regions.Length; i++)
-				ProcessRegion(regions[i], chunkGridPositions[i]);
-
-			Enabled = false;
+				dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
+				regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
+				creationDatas = GetComponentLookup<Matter.Creation>(),
+				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(),
+				matterColors = GetBufferLookup<Matter.ColorBufferElement>(),
+				noise = noise,
+				commandBuffer = commandBuffer
+			}.Schedule(regionQuery, Dependency);
+			handle.Complete();
+			endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(Dependency);
 		}
 
-		private void ProcessRegion(Entity region, RegionData.SpatialIndex regionIndex)
+		protected override void OnUpdate()
 		{
-			var chunks = EntityManager.GetBuffer<RegionData.ChunkBufferElement>(region, isReadOnly: true).ToNativeArray(Allocator.Temp);
-
-			int originX = regionIndex.origin.x;
-			for (int x = 0; x < Space.regionSize; x++)
-				noise[x] = SimplexNoise.Hill(originX + x, 100f, 20f) + SimplexNoise.Hill(originX + x, 10f, -1f) + SimplexNoise.Hill(originX + x, 500f, 50f);
-
-			foreach (Entity chunk in chunks)
-				ProcessChunk(chunk, regionIndex);
-		}
-		private void ProcessChunk(Entity chunk, RegionData.SpatialIndex regionIndex)
-		{
-			Vector2Int chunkOrigin = EntityManager.GetComponentData<ChunkData.RegionalIndex>(chunk).origin;
-
-			foreach (Vector2Int chunkCoord in Enumerators.GetSquare(Space.chunkSize))
-				ProcessCell(chunk, regionIndex.origin, chunkOrigin, chunkCoord);
-
-			Chunk.MarkDirty(EntityManager, chunk);
 		}
 
-		public struct ProcessCellJob : IJobParallelFor
+		[BurstCompile]
+		public partial struct GenerateRegionJob : IJobEntity
 		{
-			public Entity chunk;
-			public EntityManager entityManager;
-			public Entity matter;
-
-			public Vector2Int chunkOrigin;
-			public Vector2Int regionOrigin;
-
-			public NativeArray<Vector2Int> chunkCoords;
+			public ComponentLookup<Chunk.DirtyArea> dirtyAreas;
+			[ReadOnly]
+			public ComponentLookup<Chunk.RegionalIndex> regionalIndexes;
+			[ReadOnly]
+			public ComponentLookup<Matter.Creation> creationDatas;
+			[ReadOnly]
+			public TerrainGenerationData terrainGenerationData;
+			[ReadOnly]
+			internal BufferLookup<Matter.ColorBufferElement> matterColors;
+			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
+			public EntityCommandBuffer commandBuffer;
 			public NativeArray<float> noise;
 
-			public float terrainHeight;
-
-			public void Execute(int index)
+			public void Execute(in Region.SpatialIndex regionIndex, in DynamicBuffer<Region.ChunkBufferElement> chunks)
 			{
-				Vector2Int chunkCoord = chunkCoords[index];
+				int originX = regionIndex.origin.x;
+				for (int x = 0; x < Space.RegionSize; x++)
+					noise[x] = SimplexNoise.Hill(originX + x, 100f, 20f) + SimplexNoise.Hill(originX + x, 10f, -1f) + SimplexNoise.Hill(originX + x, 500f, 50f);
+
+				foreach (Entity chunk in chunks)
+					ProcessChunk(chunk, regionIndex);
+			}
+
+			private void ProcessChunk(Entity chunk, Region.SpatialIndex regionIndex)
+			{
+				Vector2Int chunkOrigin = regionalIndexes[chunk].origin;
+
+				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.SetBuffer<Chunk.AtomBufferElement>(chunk);
+				foreach (Chunk.AtomBufferElement oldAtom in atomBuffers[chunk])
+					atomBuffer.Add(oldAtom);
+
+				foreach (Vector2Int chunkCoord in Enumerators.GetSquare(Space.ChunkSize))
+					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);
+
+				Chunk.DirtyArea area = dirtyAreas[chunk];
+				area.MarkDirty();
+				commandBuffer.SetComponent(chunk, area);
+			}
+
+			private void ProcessCell(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Vector2Int regionOrigin, Vector2Int chunkOrigin, Vector2Int chunkCoord)
+			{
 				Vector2Int regionCoord = chunkOrigin + chunkCoord;
 				Vector2Int spaceCoord = regionOrigin + regionCoord;
 
 				float additiveHeight = noise[regionCoord.x];
 
-				if (spaceCoord.y <= terrainHeight + additiveHeight)
+				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
 				{
-					Chunk.CreateAtom(entityManager, chunk, matter, chunkCoord);
+					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
 				}
 			}
-		}
 
-		private void ProcessCell(Entity chunk, Vector2Int regionOrigin, Vector2Int chunkOrigin, Vector2Int chunkCoord)
-		{
-			Vector2Int regionCoord = chunkOrigin + chunkCoord;
-			Vector2Int spaceCoord = regionOrigin + regionCoord;
-
-			float additiveHeight = noise[regionCoord.x];
-
-			if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
+			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> buffer, Vector2Int chunkCoord, Entity matter)
 			{
-				CreateAtom(chunk, chunkCoord, terrainGenerationData.soilMatter);
+				Entity atom = commandBuffer.CreateEntity(Archetypes.Atom);
+				commandBuffer.SetComponent(atom, new Atom.Matter(matter));
+				commandBuffer.SetComponent(atom, new Atom.Color((Color)matterColors[matter].Pick()));
+				// commandBuffer.SetComponent(atom, new Atom.Color(Color.green));
+
+				var creationData = creationDatas[matter];
+				commandBuffer.SetComponent(atom, new Atom.Temperature(creationData.temperature));
+
+				buffer.SetAtom(chunkCoord, atom);
 			}
 		}
 
-		private void CreateAtom(Entity chunk, Vector2Int chunkCoord, Entity matter) =>
-			Chunk.CreateAtom(EntityManager, chunk, matter, chunkCoord);
-
-		protected override void OnUpdate()
+		[BurstCompile]
+		public partial struct MarkDirtyJob : IJobEntity
 		{
+			public void Execute(ref Chunk.DirtyArea dirtyArea)
+			{
+				dirtyArea.MarkDirty();
+			}
 		}
 	}
 }

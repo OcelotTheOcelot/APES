@@ -4,9 +4,21 @@ using UnityEngine;
 
 namespace Verse
 {
-	[GenerateAuthoringComponent]
-	public struct TickRateData : IComponentData
+	public class TickerDataAuthoring : MonoBehaviour
+	{
+		public float ticksPerSecond;
+	}
+
+	public struct TickRate : IComponentData
 	{
 		public float ticksPerSecond;  // default is 60f;
+	}
+
+	public class TickRateAuthoringBaker : Baker<TickerDataAuthoring>
+	{
+		public override void Bake(TickerDataAuthoring authoring)
+		{
+			AddComponent(new TickRate { ticksPerSecond = authoring.ticksPerSecond });
+		}
 	}
 }

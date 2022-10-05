@@ -11,7 +11,7 @@ public static class RectExtension
 	/// <param name="b"></param>
 	/// <param name="margin"></param>
 	/// <returns></returns>
-	public static RectInt CreateRectBetween(Vector2Int a, Vector2Int b, int margin = 0, int additiveSize = 0)
+	public static RectInt CreateRectBetween(Vector2Int a, Vector2Int b, int margin = 0)
 	{
 		int xMin, yMin, width, height;
 
@@ -30,8 +30,8 @@ public static class RectExtension
 		return new RectInt(
 			xMin - margin,
 			yMin - margin,
-			width + (margin << 1) + additiveSize,
-			height + (margin << 1) + additiveSize
+			width + (margin << 1),
+			height + (margin << 1)
 		);
 	}
 
@@ -62,4 +62,6 @@ public static class RectExtension
 	}
 
 	public static RectInt GetInflated(this RectInt rect) => new (rect.xMin - 1, rect.yMin - 1, rect.width + 2, rect.height + 2);
+	public static RectInt GetShifted(this RectInt rect, Vector2Int shift) => new (rect.min + shift, rect.size);
+	public static RectInt GetShifted(this RectInt rect, int shiftX, int shiftY) => new (rect.xMin + shiftX, rect.yMin + shiftY, rect.width, rect.height);
 }

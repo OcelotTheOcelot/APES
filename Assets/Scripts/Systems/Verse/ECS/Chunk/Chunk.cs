@@ -1,47 +1,92 @@
 using UnityEngine;
 using Unity.Entities;
 using System;
-
-using static Verse.ChunkData;
-using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 
 namespace Verse
 {
-	public static class Chunk
+	public static partial class Chunk
 	{
-		//public static bool CreateAtom(EntityManager dstManager, Entity chunk, Entity matterPrefab, Vector2Int chunkCoord)
-		//{
-		//	Entity atom = dstManager.Instantiate(SpaceInitializationSystem.AtomPrefab);
+		public struct RegionalIndex : IComponentData
+		{
+			public Vector2Int index;
+			public Vector2Int origin;
 
-		//	dstManager.SetComponentData(atom, new AtomData.Matter { matterPrefab = matterPrefab });
+			public RegionalIndex(Vector2Int position)
+			{
+				index = position;
+				origin = position * Space.ChunkSize;
+			}
+		}
 
-		//	MatterData.Creation creationData = dstManager.GetComponentData<MatterData.Creation>(matterPrefab);
-		//	dstManager.SetComponentData(atom, new AtomData.Temperature { temperature = creationData.defaultTemperature });
+		public struct SpatialIndex : IComponentData
+		{
+			public Vector2Int origin;
 
-		//	var colors = dstManager.GetBuffer<MatterData.ColorVariantBufferElement>(matterPrefab);
-		//	dstManager.SetComponentData(atom, new AtomData.Color
-		//		{
-		//			color = colors.Length > 0 ? Utils.Pick(colors) : MatterData.invalidColor
-		//		}
-		//	);
+			public SpatialIndex(Verse.Region.SpatialIndex regionIndex, RegionalIndex index)
+			{
+				origin = regionIndex.origin + index.origin;
+			}
+		}
 
-		//	var atoms = dstManager.GetBuffer<AtomBufferElement>(chunk);
-		//	atoms.SetAtom(chunkCoord.x, chunkCoord.y, atom);
+		public struct Region : IComponentData
+		{
+			public Entity region;
+		}
 
-		//	return true;
-		//}
+		[InternalBufferCapacity(64)]
+		public struct AtomBufferElement : IBufferElementData
+		{
+			public Entity atom;
+
+			public static implicit operator Entity(AtomBufferElement bufferElement) => bufferElement.atom;
+			public static implicit operator AtomBufferElement(Entity atom) => new()
+			{
+				atom = atom
+			};
+		}
+
+		/// <summary>
+		/// Determines order in which clusters should be processed.
+		/// Clusters with the same number can be safely processed simultaneously.
+		/// I'm lazy so I'll just illustrate:
+		/// 
+		/// 0 1 0 1 0 1
+		/// 2 3 2 3 2 3
+		/// 0 1 0 1 0 1
+		/// 2 3 2 3 2 3
+		/// 
+		/// So that chunks with same index can be processed at the same time.
+		/// </summary>
+		public struct ProcessingBatchIndex : ISharedComponentData
+		{
+			public int batchIndex;
+
+			public ProcessingBatchIndex(int batchIndex)
+			{
+				this.batchIndex = batchIndex;
+			}
+
+			public ProcessingBatchIndex(Vector2Int gridPos)
+			{
+				batchIndex = GetIndexFromGridPos(gridPos);
+			}
+
+			public static int GetIndexFromGridPos(Vector2Int gridPos) => GetIndexFromGridPos(gridPos.x & 0b1, gridPos.y & 0b1);
+			public static int GetIndexFromGridPos(int gridXOddity, int gridYOddity) => (gridYOddity << 1) + gridXOddity;
+		}
 
 		public static bool CreateAtom(EntityManager dstManager, Entity chunk, Entity matterPrefab, Vector2Int chunkCoord)
 		{
-			Entity atom = dstManager.Instantiate(SpaceInitializationSystem.AtomPrefab);
+			Entity atom = dstManager.CreateEntity(Archetypes.Atom);
 
-			dstManager.SetComponentData(atom, new AtomData.Matter { matterPrefab = matterPrefab });
+			dstManager.SetComponentData(atom, new Atom.Matter { matter = matterPrefab });
 
-			MatterData.Creation creationData = dstManager.GetComponentData<MatterData.Creation>(matterPrefab);
-			dstManager.SetComponentData(atom, new AtomData.Temperature { temperature = creationData.temperature });
+			Matter.Creation creationData = dstManager.GetComponentData<Matter.Creation>(matterPrefab);
+			dstManager.SetComponentData(atom, new Atom.Temperature { temperature = creationData.temperature });
 
-			dstManager.SetComponentData<AtomData.Color>(atom,
-				Utils.Pick(dstManager.GetBuffer<MatterData.ColorBufferElement>(matterPrefab))
+			dstManager.SetComponentData<Atom.Color>(atom,
+				Utils.Pick(dstManager.GetBuffer<Matter.ColorBufferElement>(matterPrefab))
 			);
 
 			var atoms = dstManager.GetBuffer<AtomBufferElement>(chunk);
@@ -55,18 +100,13 @@ namespace Verse
 		public static Entity GetAtom(EntityManager dstManager, Entity chunk, int chunkCoordX, int chunkCoordY) =>
 			dstManager.GetBuffer<AtomBufferElement>(chunk).GetAtom(chunkCoordX, chunkCoordY);
 
-		public static void MarkDirty(EntityManager dstManager, Entity chunk, RectInt rect, bool safe = true)
+		internal static bool RemoveAtom(EntityManager dstManager, Entity chunk, Vector2Int chunkCoord)
 		{
-			DirtyArea area = dstManager.GetComponentData<DirtyArea>(chunk);
-			area.MarkDirty(rect, safe: safe);
-			dstManager.SetComponentData(chunk, area);
-		}
+			var atoms = dstManager.GetBuffer<AtomBufferElement>(chunk);
+			// dstManager.DestroyEntity(atoms.GetAtom(chunkCoord));
+			atoms.SetAtom(chunkCoord, Entity.Null);
 
-		public static void MarkDirty(EntityManager dstManager, Entity chunk)
-		{
-			DirtyArea area = dstManager.GetComponentData<DirtyArea>(chunk);
-			area.MarkDirty();
-			dstManager.SetComponentData(chunk, area);
+			return true;
 		}
 	}
 }
