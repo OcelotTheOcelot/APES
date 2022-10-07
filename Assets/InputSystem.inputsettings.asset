@@ -12,9 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 0}
   m_Name: InputSystem.inputsettings
   m_EditorClassIdentifier: Unity.InputSystem:UnityEngine.InputSystem:InputSettings
-  m_SupportedDevices:
-  - Keyboard
-  - Mouse
+  m_SupportedDevices: []
   m_UpdateMode: 1
   m_MaxEventBytesPerUpdate: 5242880
   m_MaxQueuedEventsPerUpdate: 1000

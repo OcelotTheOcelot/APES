@@ -47,7 +47,9 @@ namespace Verse
 
 				duration = tickDuration,
 			}.Run(regionQuery);
+			*/
 
+			/*
 			new DrawDirtyAreaGizmosJob
 			{
 				dirtyAreaColor = new Color(1f, 0f, 0f, .25f),

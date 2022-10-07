@@ -93,24 +93,7 @@ namespace Verse
 			}
 
 			public override string ToString() => active ? $"[{from}–{to}]" : "[empty]";
-
-			public IEnumerable<Vector2Int> GetSnake(int tick)
-			{
-				int oddity = (tick + from.y) & 1;
-
-				for (int y = from.y; y <= to.y; y++)
-				{
-					if (oddity == 1)
-						for (int x = from.x; x <= to.x; x++)
-							yield return new Vector2Int(x, y);
-					else
-						for (int x = to.x - 1; x >= from.x; x--)
-							yield return new Vector2Int(x, y);
-
-					oddity ^= 1;
-				}
-			}
-		}
+        }
 
 		public static void MarkDirty(EntityManager dstManager, Entity chunk, RectInt rect, bool safe = true)
 		{

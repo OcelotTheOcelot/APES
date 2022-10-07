@@ -70,21 +70,24 @@ public static class Enumerators
 	/// <param name="from"></param>
 	/// <param name="to"></param>
 	/// <returns></returns>
-	public static IEnumerable<Vector2Int> GetSnake(Vector2Int from, Vector2Int to, bool leftToRight=true)
-	{
-		for (int y = from.y; y <= to.y; y++)
-		{
-			if (leftToRight)
-				for (int x = from.x; x <= to.x; x++)
-					yield return new Vector2Int(x, y);
-			else
-				for (int x = to.x; x >= from.x; x--)
-					yield return new Vector2Int(x, y);
-			
-			leftToRight = !leftToRight;
-		}
-	}
-	public static IEnumerable<int> GetFlatSnake(int from, int to, int snakeWidth, bool leftToRight = true)
+	public static IEnumerable<Vector2Int> GetSnakeWithTickOddity(Vector2Int from, Vector2Int to, int tick)
+    {
+        int oddity = (tick + from.y) & 1;
+
+        for (int y = from.y; y <= to.y; y++)
+        {
+            if (oddity == 1)
+                for (int x = from.x; x <= to.x; x++)
+                    yield return new Vector2Int(x, y);
+            else
+                for (int x = to.x - 1; x >= from.x; x--)
+                    yield return new Vector2Int(x, y);
+
+            oddity ^= 1;
+        }
+    }
+
+    public static IEnumerable<int> GetFlatTickSnake(int from, int to, int snakeWidth, int tick)
 	{
 		throw new NotImplementedException();
 	}

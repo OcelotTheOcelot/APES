@@ -61,7 +61,6 @@ namespace Verse.WorldGen
 		{
 		}
 
-		[BurstCompile]
 		public partial struct GenerateRegionJob : IJobEntity
 		{
 			public ComponentLookup<Chunk.DirtyArea> dirtyAreas;
@@ -114,19 +113,23 @@ namespace Verse.WorldGen
 				{
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
 				}
+				else if (spaceCoord.y > 512-64)
+				{
+					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
+
+				}
 			}
 
-			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> buffer, Vector2Int chunkCoord, Entity matter)
+			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Vector2Int chunkCoord, Entity matter)
 			{
 				Entity atom = commandBuffer.CreateEntity(Archetypes.Atom);
 				commandBuffer.SetComponent(atom, new Atom.Matter(matter));
 				commandBuffer.SetComponent(atom, new Atom.Color((Color)matterColors[matter].Pick()));
-				// commandBuffer.SetComponent(atom, new Atom.Color(Color.green));
 
 				var creationData = creationDatas[matter];
 				commandBuffer.SetComponent(atom, new Atom.Temperature(creationData.temperature));
 
-				buffer.SetAtom(chunkCoord, atom);
+				atomBuffer.SetAtom(chunkCoord, atom);
 			}
 		}
 
