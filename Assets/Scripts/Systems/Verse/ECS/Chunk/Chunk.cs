@@ -15,7 +15,7 @@ namespace Verse
 			public RegionalIndex(Vector2Int position)
 			{
 				index = position;
-				origin = position * Space.ChunkSize;
+				origin = position * Space.chunkSize;
 			}
 		}
 

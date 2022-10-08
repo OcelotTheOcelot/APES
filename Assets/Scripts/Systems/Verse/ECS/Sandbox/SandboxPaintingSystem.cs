@@ -26,7 +26,7 @@ namespace Verse
 		{
 			base.OnStartRunning();
 
-			space = GetSingletonEntity<Space.Size>();
+			space = GetSingletonEntity<Space.Tag>();
 
 			SetSingleton(new Sandbox.Painting.Matter { matter = MatterLibrary.Get("water") });
 		}
@@ -80,7 +80,7 @@ namespace Verse
 		private void InputBrushSize(float inputValue)
 		{
 			int size = GetSingleton<Sandbox.Painting.Brush>().size;
-			size = Mathf.Clamp(size + (int)Mathf.Sign(inputValue), 0, Space.ChunkSize);
+			size = Mathf.Clamp(size + (int)Mathf.Sign(inputValue), 0, Space.chunkSize);
 			SetSingleton(new Sandbox.Painting.Brush { size = size });
 		}
 

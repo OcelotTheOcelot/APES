@@ -18,52 +18,40 @@ namespace Verse
 			public Entity South;
 			public Entity SouthEast;
 
-			public IEnumerator<Entity> GetEnumerator()
-			{
-				yield return East;
-				yield return NorthEast;
-				yield return North;
-				yield return NorthWest;
-				yield return West;
-				yield return SouthWest;
-				yield return South;
-				yield return SouthEast;
-			}
-
 			public void MarkDirty(
 				ComponentLookup<DirtyArea> dirtyAreas,
 				RectInt dirtyRect,
 				bool safe
 			)
 			{
-				int chunkSize = Space.ChunkSize;
+				int chunkSize = Space.chunkSize;
 
 				if (dirtyRect.xMax >= chunkSize)
 				{
 					if (dirtyRect.yMax >= chunkSize)
-						MarkDirtyIfExists(dirtyAreas, NorthEast, dirtyRect.GetShifted(-Space.ChunkSize, -Space.ChunkSize), safe);
+						MarkDirtyIfExists(dirtyAreas, NorthEast, dirtyRect.GetShifted(-Space.chunkSize, -Space.chunkSize), safe);
 
 					if (dirtyRect.yMin < 0)
-						MarkDirtyIfExists(dirtyAreas, SouthEast, dirtyRect.GetShifted(-Space.ChunkSize, Space.ChunkSize), safe);
+						MarkDirtyIfExists(dirtyAreas, SouthEast, dirtyRect.GetShifted(-Space.chunkSize, Space.chunkSize), safe);
 
-					MarkDirtyIfExists(dirtyAreas, East, dirtyRect.GetShifted(-Space.ChunkSize, 0), safe);
+					MarkDirtyIfExists(dirtyAreas, East, dirtyRect.GetShifted(-Space.chunkSize, 0), safe);
 				}
 
 				if (dirtyRect.xMin < 0)
 				{
 					if (dirtyRect.yMax >= chunkSize)
-						MarkDirtyIfExists(dirtyAreas, NorthWest, dirtyRect.GetShifted(Space.ChunkSize, -Space.ChunkSize), safe);
+						MarkDirtyIfExists(dirtyAreas, NorthWest, dirtyRect.GetShifted(Space.chunkSize, -Space.chunkSize), safe);
 
 					if (dirtyRect.yMin < 0)
-						MarkDirtyIfExists(dirtyAreas, SouthWest, dirtyRect.GetShifted(Space.ChunkSize, Space.ChunkSize), safe);
+						MarkDirtyIfExists(dirtyAreas, SouthWest, dirtyRect.GetShifted(Space.chunkSize, Space.chunkSize), safe);
 
-					MarkDirtyIfExists(dirtyAreas, West, dirtyRect.GetShifted(Space.ChunkSize, 0), safe);
+					MarkDirtyIfExists(dirtyAreas, West, dirtyRect.GetShifted(Space.chunkSize, 0), safe);
 				}
 
 				if (dirtyRect.yMax >= chunkSize)
-					MarkDirtyIfExists(dirtyAreas, North, dirtyRect.GetShifted(0, -Space.ChunkSize), safe);
+					MarkDirtyIfExists(dirtyAreas, North, dirtyRect.GetShifted(0, -Space.chunkSize), safe);
 				if (dirtyRect.yMin < 0)
-					MarkDirtyIfExists(dirtyAreas, South, dirtyRect.GetShifted(0, Space.ChunkSize), safe);
+					MarkDirtyIfExists(dirtyAreas, South, dirtyRect.GetShifted(0, Space.chunkSize), safe);
 			}
 
 			private static void MarkDirtyIfExists(ComponentLookup<DirtyArea> dirtyAreas, Entity chunk, RectInt rect, bool safe = true)

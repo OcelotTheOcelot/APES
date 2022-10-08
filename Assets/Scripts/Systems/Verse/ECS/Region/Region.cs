@@ -37,7 +37,7 @@ namespace Verse
 			public SpatialIndex(Vector2Int spatialIndex) : this()
 			{
 				index = spatialIndex;
-				origin = spatialIndex * Space.RegionSize;
+				origin = spatialIndex * Space.regionSize;
 			}
 
 			public int GetSortingWeight(int gridWidth) => gridWidth * index.y + index.x;
@@ -77,7 +77,7 @@ namespace Verse
 			dstManager.GetBuffer<ChunkBufferElement>(region).GetChunk(GetChunkPos(regionCoord));
 
 		public static Entity GetChunk(this DynamicBuffer<ChunkBufferElement> chunks, int posX, int posY) =>
-			chunks[posY * Space.ChunksPerRegion + posX];
+			chunks[posY * Space.chunksPerRegion + posX];
 		public static Entity GetChunk(this DynamicBuffer<ChunkBufferElement> chunks, Vector2Int pos) =>
 			chunks.GetChunk(pos.x, pos.y);
 
@@ -87,7 +87,7 @@ namespace Verse
 		public static Chunk.DirtyArea GetDirtyArea(this DynamicBuffer<ChunkBufferElement> chunks, EntityManager dstManager, int posX, int posY) =>
 			dstManager.GetComponentData<Chunk.DirtyArea>(chunks.GetChunk(posX, posY));
 		
-		public static Vector2Int GetChunkPos(Vector2Int regionCoord) => new(regionCoord.x / Space.ChunkSize, regionCoord.y / Space.ChunkSize);
+		public static Vector2Int GetChunkPos(Vector2Int regionCoord) => new(regionCoord.x / Space.chunkSize, regionCoord.y / Space.chunkSize);
 
 		//public static void MarkDirty(this DynamicBuffer<RegionData.ChunkBufferElement> buffer)
 		//{
@@ -105,12 +105,12 @@ namespace Verse
 		public static void MarkDirty(EntityManager dstManager, Entity region, RectInt regionRect, bool safe = false)
 		{
 			if (safe)
-				regionRect.IntersectWith(Space.RegionBounds);
+				regionRect.IntersectWith(Space.regionBounds);
 			
 			DynamicBuffer<ChunkBufferElement> chunks = dstManager.GetBuffer<ChunkBufferElement>(region);
 
-			Vector2Int minDist = regionRect.min.GetDivided(Space.ChunkSize);
-			Vector2Int maxDist = (regionRect.max - Vector2Int.one).GetDivided(Space.ChunkSize);
+			Vector2Int minDist = regionRect.min.GetDivided(Space.chunkSize);
+			Vector2Int maxDist = (regionRect.max - Vector2Int.one).GetDivided(Space.chunkSize);
 
 			for (int posY = minDist.y; posY <= maxDist.y; posY++)
 			{

@@ -12,6 +12,8 @@ namespace Verse
 		private const float defaultPixelsPerMeter = 100f;
 		private EntityArchetype chunkArchetype;
 
+		private Entity space;
+
 		protected override void OnCreate()
 		{
 			base.OnCreate();
@@ -32,12 +34,7 @@ namespace Verse
 		{
 			base.OnStartRunning();
 
-			Space.RegisterSpaceEntity(GetSingletonEntity<Space.Tag>());
-
-			Space.Size sizeData = GetSingleton<Space.Size>();
-			Space.RegisterSpaceSizes(sizeData);
-
-			Space.RegisterSpaceSizes(sizeData);
+			space = GetSingletonEntity<Space.Tag>();
 
 			// innerChunkPositions = new(1, 1, Space.ChunksPerRegion - 1, Space.ChunksPerRegion - 1);
 
@@ -54,7 +51,7 @@ namespace Verse
 		{
 			Entity region = EntityManager.Instantiate(Prefabs.Region);
 
-			DynamicBuffer<Space.RegionBufferElement> regions = EntityManager.GetBuffer<Space.RegionBufferElement>(Space.SpaceEntity);
+			DynamicBuffer<Space.RegionBufferElement> regions = EntityManager.GetBuffer<Space.RegionBufferElement>(space);
 			// GetBufferLookup<Space.RegionBufferElement>()[SpaceEntity];
 
 			Region.SpatialIndex spatialIndex = new(regionPos);
@@ -62,12 +59,12 @@ namespace Verse
 
 			InsertRegion(regions, region, regionPos);
 
-			Vector2 positionOffset = regionPos * Space.RegionSize;
-			positionOffset *= Space.MetersPerCell;
+			Vector2 positionOffset = regionPos * Space.regionSize;
+			positionOffset *= Space.metersPerCell;
 
 			LocalToWorldTransform transform = EntityManager.GetComponentData<LocalToWorldTransform>(region);
 			transform.Value.Position += new float3(positionOffset.x, positionOffset.y, 0f);
-			transform.Value.Scale *= defaultPixelsPerMeter * Space.MetersPerCell;
+			transform.Value.Scale *= defaultPixelsPerMeter * Space.metersPerCell;
 			EntityManager.SetComponentData(region, transform);
 
 			EntityManager.SetSharedComponentManaged(region,
@@ -75,7 +72,7 @@ namespace Verse
 				{ state = Region.Processing.State.PendingGeneration }
 			);
 
-			foreach (Vector2Int regionalPos in Enumerators.GetSquare(Space.ChunksPerRegion))
+			foreach (Vector2Int regionalPos in Enumerators.GetSquare(Space.chunksPerRegion))
 			{
 				Entity chunk = EntityManager.CreateEntity(chunkArchetype);
 
@@ -87,7 +84,7 @@ namespace Verse
 				EntityManager.SetSharedComponentManaged(chunk, new Chunk.ProcessingBatchIndex(regionalPos));
 
 				var atoms = EntityManager.GetBuffer<Chunk.AtomBufferElement>(chunk);
-				for (int i = 0; i < Space.ChunkSize * Space.ChunkSize; i++)
+				for (int i = 0; i < Space.chunkSize * Space.chunkSize; i++)
 					atoms.Add(Entity.Null);
 
 				// Don't you event think about relocating this line unless you're transferring the system to ECB.
@@ -123,7 +120,7 @@ namespace Verse
 					southernNeighbourhood.North = chunk;
 					EntityManager.SetComponentData(southern, southernNeighbourhood);
 
-					if (regionalPos.x < Space.ChunksPerRegion - 1)
+					if (regionalPos.x < Space.chunksPerRegion - 1)
 					{
 						southEastern = chunks.GetChunk(regionalPos.x + 1, regionalPos.y - 1);
 						Chunk.Neighbourhood southEasternNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(southEastern);
@@ -145,13 +142,13 @@ namespace Verse
 
 			// Neighbours linking <TODO>
 			DynamicBuffer<Region.ChunkBufferElement> thisChunks = EntityManager.GetBuffer<Region.ChunkBufferElement>(region);
-			int maxChunkIndex = Space.ChunksPerRegion * Space.ChunksPerRegion - 1;
+			int maxChunkIndex = Space.chunksPerRegion * Space.chunksPerRegion - 1;
 
-			if (Space.GetRegionByIndex(EntityManager, Space.SpaceEntity, regionPos + Vector2Int.left, out Entity westernRegion))
+			if (Space.GetRegionByIndex(EntityManager, space, regionPos + Vector2Int.left, out Entity westernRegion))
 			{
-				for (int thisRegionChunkIndex = 0; thisRegionChunkIndex < maxChunkIndex; thisRegionChunkIndex += Space.ChunksPerRegion)
+				for (int thisRegionChunkIndex = 0; thisRegionChunkIndex < maxChunkIndex; thisRegionChunkIndex += Space.chunksPerRegion)
 				{
-					int westernRegionChunkIndex = thisRegionChunkIndex + Space.ChunksPerRegion - 1;
+					int westernRegionChunkIndex = thisRegionChunkIndex + Space.chunksPerRegion - 1;
 
 					Entity thisChunk = thisChunks[thisRegionChunkIndex];
 					Chunk.Neighbourhood thisNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(thisChunk);
@@ -165,9 +162,9 @@ namespace Verse
 					EntityManager.SetComponentData(thisChunk, thisNeighbourhood);
 					EntityManager.SetComponentData(westernChunk, westernNeighbourhood);
 
-					if (thisRegionChunkIndex < maxChunkIndex - Space.ChunksPerRegion)
+					if (thisRegionChunkIndex < maxChunkIndex - Space.chunksPerRegion)
 					{
-						int northWesternChunkIndex = thisRegionChunkIndex + Space.ChunksPerRegion;
+						int northWesternChunkIndex = thisRegionChunkIndex + Space.chunksPerRegion;
 						Entity northWesternChunk = Region.GetChunkByIndexNonSafe(EntityManager, westernRegion, northWesternChunkIndex);
 
 						Chunk.Neighbourhood northWesternNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(northWesternChunk);
@@ -179,7 +176,7 @@ namespace Verse
 					}
 					if (thisRegionChunkIndex > 0)
 					{
-						int southWesternChunkIndex = thisRegionChunkIndex - Space.ChunksPerRegion;
+						int southWesternChunkIndex = thisRegionChunkIndex - Space.chunksPerRegion;
 						Entity southWesternChunk = Region.GetChunkByIndexNonSafe(EntityManager, westernRegion, southWesternChunkIndex);
 
 						Chunk.Neighbourhood southWesternNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(southWesternChunk);

@@ -6,10 +6,10 @@ namespace Verse
 {
 	public static class AtomBufferExtention
 	{
-		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY) => atoms[chunkCoordY * Space.ChunkSize + chunkCoordX];
+		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX];
 		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, Vector2Int chunkCoord) => atoms.GetAtom(chunkCoord.x, chunkCoord.y);
 
-		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY, Entity atom) => atoms[chunkCoordY * Space.ChunkSize + chunkCoordX] = atom;
+		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY, Entity atom) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX] = atom;
 		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, Vector2Int chunkCoord, Entity atom) => atoms.SetAtom(chunkCoord.x, chunkCoord.y, atom);
 
 		public static bool GetAtomNeighbourFallback(
@@ -22,7 +22,7 @@ namespace Verse
 			out Vector2Int neighbourCoord
 		)
 		{
-			int chunkSize = Space.ChunkSize;
+			int chunkSize = Space.chunkSize;
 			neighbourAtoms = atoms;
 			neighbourCoord = chunkCoord;
 			Entity neighbour;

@@ -37,7 +37,6 @@ namespace Verse
 		{
 		}
 
-		[BurstCompile]
 		public partial struct RegisterMaterialJob : IJobEntity
 		{
 			public void Execute(Entity matter, in Matter.Id id)

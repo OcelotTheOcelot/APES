@@ -32,8 +32,6 @@ namespace Verse
 		{
 			base.OnStartRunning();
 
-			Space.Size sizeData = GetSingleton<Space.Size>();
-
 			tickDuration = 1f / GetSingleton<TickRate>().ticksPerSecond;
 		}
 
@@ -77,8 +75,8 @@ namespace Verse
 			
 			public void Execute(in LocalToWorldTransform transform)
 			{
-				int regionSize = Space.RegionSize, chunkSize = Space.ChunkSize;
-				float metersPerCell = Space.MetersPerCell;
+				int regionSize = Space.regionSize, chunkSize = Space.chunkSize;
+				float metersPerCell = Space.metersPerCell;
 
 				Vector3 origin = transform.Value.Position;
 				Vector3 size = new (regionSize * metersPerCell, regionSize * metersPerCell);
@@ -118,7 +116,7 @@ namespace Verse
 				if (!area.active)
 					return;
 
-				float metersPerCell = Space.MetersPerCell;
+				float metersPerCell = Space.metersPerCell;
 				float margin = .25f;
 
 				Vector2 size = area.Size - margin * 2 * Vector2.one;
@@ -143,7 +141,7 @@ namespace Verse
 
 			public void Execute(in Chunk.SpatialIndex index, ref Chunk.ProcessingBatchIndex batchIndex)
 			{
-				UnityEditor.Handles.Label((Vector2)(index.origin + new Vector2Int(Space.ChunkSize / 2, Space.ChunkSize / 2)) * Space.MetersPerCell, $"{batchIndex}");
+				UnityEditor.Handles.Label((Vector2)(index.origin + new Vector2Int(Space.chunkSize / 2, Space.chunkSize / 2)) * Space.metersPerCell, $"{batchIndex}");
 			}
 		}
 
@@ -157,10 +155,10 @@ namespace Verse
 
 			public void Execute(in Chunk.SpatialIndex index, in Chunk.Neighbourhood neighbourhood)
 			{
-				int chunkSize = Space.ChunkSize;
-				float metersPerCell = Space.MetersPerCell;
+				int chunkSize = Space.chunkSize;
+				float metersPerCell = Space.metersPerCell;
 
-				Vector3 center = (Vector2)(index.origin + new Vector2Int(Space.ChunkSize / 2, Space.ChunkSize / 2)) * metersPerCell;
+				Vector3 center = (Vector2)(index.origin + new Vector2Int(Space.chunkSize / 2, Space.chunkSize / 2)) * metersPerCell;
 
 				float size = 4 * metersPerCell;
 				const float margin = 1;

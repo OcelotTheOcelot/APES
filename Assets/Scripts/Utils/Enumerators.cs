@@ -71,23 +71,23 @@ public static class Enumerators
 	/// <param name="to"></param>
 	/// <returns></returns>
 	public static IEnumerable<Vector2Int> GetSnakeWithTickOddity(Vector2Int from, Vector2Int to, int tick)
-    {
-        int oddity = (tick + from.y) & 1;
+	{
+		int oddity = (tick + from.y) & 1;
 
-        for (int y = from.y; y <= to.y; y++)
-        {
-            if (oddity == 1)
-                for (int x = from.x; x <= to.x; x++)
-                    yield return new Vector2Int(x, y);
-            else
-                for (int x = to.x - 1; x >= from.x; x--)
-                    yield return new Vector2Int(x, y);
+		for (int y = from.y; y <= to.y; y++)
+		{
+			if (oddity == 1)
+				for (int x = from.x; x <= to.x; x++)
+					yield return new Vector2Int(x, y);
+			else
+				for (int x = to.x - 1; x >= from.x; x--)
+					yield return new Vector2Int(x, y);
 
-            oddity ^= 1;
-        }
-    }
+			oddity ^= 1;
+		}
+	}
 
-    public static IEnumerable<int> GetFlatTickSnake(int from, int to, int snakeWidth, int tick)
+	public static IEnumerable<int> GetFlatTickSnake(int from, int to, int snakeWidth, int tick)
 	{
 		throw new NotImplementedException();
 	}
@@ -151,6 +151,24 @@ public static class Enumerators
 		yield return new Vector2Int(center.x - direction, center.y);
 	}
 
+	public readonly static Vector2Int[] halfPendulumRight = new Vector2Int[5]
+	{
+			new Vector2Int(0, -1),
+			new Vector2Int(1, -1),
+			new Vector2Int(-1, -1),
+			new Vector2Int(1, 0),
+			new Vector2Int(-1, 0)
+	};
+
+	public readonly static Vector2Int[] halfPendulumLeft = new Vector2Int[5]
+	{
+			new Vector2Int(0, -1),
+			new Vector2Int(-1, -1),
+			new Vector2Int(1, -1),
+			new Vector2Int(-1, 0),
+			new Vector2Int(1, 0)
+	};
+
 	/// <summary>
 	/// x 1 x
 	/// 2 x 0
@@ -177,19 +195,19 @@ public static class Enumerators
 		yield return center + Vector2Int.one;
 		yield return center + Vector2Int.up;
 		yield return center + new Vector2Int(-1, 1);
-        yield return center + Vector2Int.left;
-        yield return center - Vector2Int.one;
-        yield return center + Vector2Int.down;
-        yield return center + new Vector2Int(1, -1);
-    }
+		yield return center + Vector2Int.left;
+		yield return center - Vector2Int.one;
+		yield return center + Vector2Int.down;
+		yield return center + new Vector2Int(1, -1);
+	}
 
-    /// <summary>
-    /// 2 3
-    /// 0 1
-    /// </summary>
-    /// <param name="rect"></param>
-    /// <returns></returns>
-    public static IEnumerable<Vector2Int> GetCorners(RectInt rect)
+	/// <summary>
+	/// 2 3
+	/// 0 1
+	/// </summary>
+	/// <param name="rect"></param>
+	/// <returns></returns>
+	public static IEnumerable<Vector2Int> GetCorners(RectInt rect)
 	{
 		yield return rect.min;
 		yield return new Vector2Int(rect.xMax, rect.yMin);

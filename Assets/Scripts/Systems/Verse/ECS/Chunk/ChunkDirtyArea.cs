@@ -13,7 +13,7 @@ namespace Verse
 			public Vector2Int from;
 			public Vector2Int to;
 
-			private static readonly Vector2Int maxSize = new(Space.ChunkSize - 1, Space.ChunkSize - 1);
+			private static readonly Vector2Int maxSize = new(Space.chunkSize - 1, Space.chunkSize - 1);
 
 			public Vector2Int Size => to - from + Vector2Int.one;
 
@@ -75,7 +75,7 @@ namespace Verse
 
 			public void MarkDirty(RectInt chunkRect, bool safe)
 			{
-				if (safe && !chunkRect.IntersectWith(Space.ChunkBounds))
+				if (safe && !chunkRect.IntersectWith(Space.chunkBounds))
 					return;
 
 				if (!active)

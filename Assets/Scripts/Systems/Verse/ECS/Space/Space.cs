@@ -10,28 +10,20 @@ namespace Verse
 {
 	public static class Space
 	{
-		public static int RegionSize { get; private set; }
-		public static float RegionPerCell { get; private set; }
-		public static RectInt RegionBounds { get; private set; }
+		public readonly static int regionSize = 512;
+		public readonly static float regionPerCell = 1f / regionSize;
+		public readonly static RectInt regionBounds = new(0, 0, regionSize - 1, regionSize - 1);
 
-		public static int ChunkSize { get; private set; }
-		public static float ChunkPerCell { get; private set; }
-		public static int ChunksPerRegion { get; private set; }
-		public static RectInt ChunkBounds { get; private set; }
 
-		public static float CellsPerMeter { get; private set; }
-		public static float MetersPerCell { get; private set; }
+		public readonly static int chunkSize = 64;
+		public readonly static float chunkPerCell = 1f / chunkSize;
+		public readonly static int chunksPerRegion = regionSize / chunkSize;
+		public readonly static RectInt chunkBounds = new(0, 0, chunkSize - 1, chunkSize - 1);
 
-		public static Entity SpaceEntity { get; private set; }
+		public readonly static float cellsPerMeter = 20f;
+		public readonly static float metersPerCell = 1f / cellsPerMeter;
 
 		public struct Tag : IComponentData { }
-
-		public struct Size : IComponentData
-		{
-			public int regionSize;
-			public int chunkSize;
-			public float cellsPerMeter;
-		}
 
 		public struct Bounds : IComponentData
 		{
@@ -58,22 +50,6 @@ namespace Verse
 			{
 				region = region
 			};
-		}
-		
-		public static void RegisterSpaceSizes(Size sizes)
-		{
-			RegionSize = sizes.regionSize;
-			RegionPerCell = 1f / RegionSize;
-			RegionBounds = new(0, 0, RegionSize - 1, RegionSize - 1);
-
-			ChunkSize = sizes.chunkSize;
-			ChunkPerCell = 1f / ChunkSize;
-
-			ChunksPerRegion = RegionSize / ChunkSize;
-			ChunkBounds = new(0, 0, ChunkSize - 1, ChunkSize - 1);
-
-			CellsPerMeter = sizes.cellsPerMeter;
-			MetersPerCell = 1f / CellsPerMeter;
 		}
 
 		public static bool RemoveAtom(EntityManager dstManager, Entity space, Vector2Int spaceCoord)
@@ -123,14 +99,14 @@ namespace Verse
 
 		public static Vector2Int GetRegionIndex(Vector2Int spaceCoord) =>
 			new(
-				Mathf.FloorToInt(spaceCoord.x * RegionPerCell),
-				Mathf.FloorToInt(spaceCoord.y * RegionPerCell)
+				Mathf.FloorToInt(spaceCoord.x * regionPerCell),
+				Mathf.FloorToInt(spaceCoord.y * regionPerCell)
 			);
 
-		public static Vector2Int WorldToSpace(LocalToWorldTransform transform, Space.Size sizeData, float3 worldPos)
+		public static Vector2Int WorldToSpace(LocalToWorldTransform transform, float3 worldPos)
 		{
 			float3 localPos = worldPos - transform.Value.Position;
-			localPos *= sizeData.cellsPerMeter;
+			localPos *= cellsPerMeter;
 
 			return new Vector2Int(
 				Mathf.FloorToInt(localPos.x),
@@ -140,9 +116,9 @@ namespace Verse
 
 		public static void MarkDirty(EntityManager dstManager, Entity space, RectInt spaceRect, bool safe)
 		{
-			for (int regPosY = spaceRect.yMin / RegionSize; regPosY <= ((spaceRect.yMax - 1) / RegionSize); regPosY++)
+			for (int regPosY = spaceRect.yMin / regionSize; regPosY <= ((spaceRect.yMax - 1) / regionSize); regPosY++)
 			{
-				for (int regPosX = spaceRect.xMin / RegionSize; regPosX <= ((spaceRect.xMax - 1) / RegionSize); regPosX++)
+				for (int regPosX = spaceRect.xMin / regionSize; regPosX <= ((spaceRect.xMax - 1) / regionSize); regPosX++)
 				{
 					if (!GetRegionByIndex(dstManager, space, new Vector2Int(regPosX, regPosY), out Entity region))
 						continue;
@@ -164,10 +140,5 @@ namespace Verse
 
 		public static Vector2Int SpaceToRegion(Region.SpatialIndex regionIndex, Vector2Int spaceCoord) =>
 			spaceCoord - regionIndex.origin;
-
-		public static void RegisterSpaceEntity(Entity space)
-		{
-			SpaceEntity = space;
-		}
 	}
 }

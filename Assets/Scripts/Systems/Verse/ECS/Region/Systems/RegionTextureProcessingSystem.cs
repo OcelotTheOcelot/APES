@@ -5,15 +5,19 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using Unity.Burst;
+using System.Runtime.InteropServices;
 
 namespace Verse
 {
 	[UpdateInGroup(typeof(WorldTickSystemGroup), OrderFirst = true)]
 	public partial class RegionTextureProcessingSystem : SystemBase
 	{
+		private readonly static Pixel deferredColor = new(255, 0, 255, 255);
+
 		private EntityQuery textureQuery;
 
 		private Color32 emptyColor;
+		private Pixel emptyColorBurst;
 
 		protected override void OnStartRunning()
 		{
@@ -25,6 +29,7 @@ namespace Verse
 			);
 
 			emptyColor = GetSingleton<Space.Colors>().emptySpaceColor;
+			emptyColorBurst = new(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a);
 
 			EntityQuery emptyTextureQuery = GetEntityQuery(
 				ComponentType.ReadWrite<LocalToWorldTransform>(),
@@ -32,29 +37,41 @@ namespace Verse
 			);
 			new CreateEmptyTextureJob
 			{
-				regionSize = Space.RegionSize,
 				emptyColor = emptyColor
 			}.Run(emptyTextureQuery);
 		}
 
 		protected override void OnUpdate()
 		{
-			new RebuildChunkTextureJob
+			//Texture2D texture = sprite.texture;
+			//texture.GetRawTextureData<Color32>();
+
+			new RebuildChunkTextureJobBurstable
 			{
-				emptyColor = emptyColor,
+				emptyColor = emptyColorBurst,
 				atomColors = GetComponentLookup<Atom.Color>(),
 				dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
 				regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
 				chunkBuffers = GetBufferLookup<Region.ChunkBufferElement>(),
 				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>()
 			}.Run(textureQuery);
+
+			//new RebuildChunkTextureJobMainThread
+			//{
+			//	emptyColor = emptyColor,
+			//	atomColors = GetComponentLookup<Atom.Color>(),
+			//	dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
+			//	regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
+			//	chunkBuffers = GetBufferLookup<Region.ChunkBufferElement>(),
+			//	atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>()
+			//}.Run(textureQuery);
 		}
 
-		[BurstCompile]
-		private partial struct RebuildChunkTextureJob : IJobEntity
+		// [BurstCompile]
+		private partial struct RebuildChunkTextureJobBurstable : IJobEntity
 		{
 			[ReadOnly]
-			public Color32 emptyColor;
+			public Pixel emptyColor;
 
 			[ReadOnly]
 			public ComponentLookup<Atom.Color> atomColors;
@@ -67,66 +84,57 @@ namespace Verse
 			[ReadOnly]
 			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
 
+
 			public void Execute(in RegionTexture.OwningRegion owningRegion, in SpriteRenderer renderer)
 			{
 				Texture2D texture = renderer.sprite.texture;
+				NativeArray<Pixel> data = texture.GetRawTextureData<Pixel>();
 
 				var chunks = chunkBuffers[owningRegion.region];
-
 				foreach (Entity chunk in chunks)
 				{
 					Chunk.DirtyArea dirtyArea = dirtyAreas[chunk];
 					if (!dirtyArea.active)
 						continue;
 
-					Vector2Int fromRegionCoord = regionalIndexes[chunk].origin + dirtyArea.from;
-					Vector2Int size = dirtyArea.Size;
+					Vector2Int regionalOrigin = regionalIndexes[chunk].origin;
+					int regionalOriginOffset = regionalOrigin.y * Space.regionSize + regionalOrigin.x;
 
 					var atoms = atomBuffers[chunk];
-
-					int height = dirtyArea.to.y * Space.ChunkSize;
-
-					int counter = 0;
-					Color32[] colors = new Color32[size.Area()];
-					for (
-						int rowShift = dirtyArea.from.y * Space.ChunkSize;
-						rowShift <= height;
-						rowShift += Space.ChunkSize
-					)
+					for (int y = dirtyArea.from.y; y <= dirtyArea.to.y; y++)
+					{
 						for (int x = dirtyArea.from.x; x <= dirtyArea.to.x; x++)
-							colors[counter++] = GetColorOf(atoms[rowShift + x]);
-
-					texture.SetPixels32(
-						fromRegionCoord.x, fromRegionCoord.y, size.x, size.y,
-						colors
-					);
+						{
+							int regionalAdditiveOffset = y * Space.regionSize + x;
+							data[regionalOriginOffset + regionalAdditiveOffset] = GetColorOf(atoms[y * Space.chunkSize + x]);
+						}
+					}
 				}
 
+				texture.LoadRawTextureData(data);
 				texture.Apply();
 			}
 
-			private Color32 GetColorOf(Entity atom)
+			private Pixel GetColorOf(Entity atom)
 			{
 				if (atom == Entity.Null)
 					return emptyColor;
 
 				if (atom.Index < 0)
-					return Color.magenta;
+					return deferredColor;
 
 				return atomColors[atom].color;
-			}
+            }
 		}
 
 		public partial struct CreateEmptyTextureJob : IJobEntity
 		{
 			[ReadOnly]
-			public int regionSize;
-			
-			[ReadOnly]
 			public Color32 emptyColor;
 
 			public void Execute(in SpriteRenderer renderer, ref LocalToWorldTransform transform)
 			{
+				int regionSize = Space.regionSize;
 				renderer.sprite = Sprite.Create(
 					GenerateEmptyTexture(regionSize, regionSize, emptyColor),
 					new Rect(0, 0, regionSize, regionSize),
@@ -138,7 +146,7 @@ namespace Verse
 
 		public static Texture2D GenerateEmptyTexture(int width, int height, Color32 empty)
 		{
-			Texture2D texture = new(width, height, TextureFormat.ARGB32, false, false)
+			Texture2D texture = new(width, height, TextureFormat.RGBA32, false, false)
 			{
 				filterMode = FilterMode.Point
 			};
@@ -148,6 +156,38 @@ namespace Verse
 			texture.Apply();
 
 			return texture;
+		}
+
+		[StructLayout(LayoutKind.Explicit)]
+		public struct Pixel
+		{
+			[FieldOffset(0)]
+			public int rgba;
+
+			[FieldOffset(0)]
+			public byte r;
+
+			[FieldOffset(1)]
+			public byte g;
+
+			[FieldOffset(2)]
+			public byte b;
+
+			[FieldOffset(3)]
+			public byte a;
+
+			public Pixel(byte red, byte green, byte blue, byte alpha)
+			{
+				rgba = 0;
+
+				r = red;
+				g = green;
+				b = blue;
+				a = alpha;
+			}
+
+			public static implicit operator Color32(Pixel pixel) => new(pixel.r, pixel.g, pixel.b, pixel.a);
+			public static implicit operator Pixel(Color32 color) => new(color.r, color.g, color.b, color.a);
 		}
 	}
 }

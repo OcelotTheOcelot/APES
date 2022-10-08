@@ -38,7 +38,7 @@ namespace Verse.WorldGen
 		{
 			base.OnStartRunning();
 
-			noise = new NativeArray<float>(Space.RegionSize, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+			noise = new NativeArray<float>(Space.regionSize, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
 			EntityCommandBuffer commandBuffer = GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
 			var handle = new GenerateRegionJob()
@@ -79,7 +79,7 @@ namespace Verse.WorldGen
 			public void Execute(in Region.SpatialIndex regionIndex, in DynamicBuffer<Region.ChunkBufferElement> chunks)
 			{
 				int originX = regionIndex.origin.x;
-				for (int x = 0; x < Space.RegionSize; x++)
+				for (int x = 0; x < Space.regionSize; x++)
 					noise[x] = SimplexNoise.Hill(originX + x, 100f, 20f) + SimplexNoise.Hill(originX + x, 10f, -1f) + SimplexNoise.Hill(originX + x, 500f, 50f);
 
 				foreach (Entity chunk in chunks)
@@ -94,7 +94,7 @@ namespace Verse.WorldGen
 				foreach (Chunk.AtomBufferElement oldAtom in atomBuffers[chunk])
 					atomBuffer.Add(oldAtom);
 
-				foreach (Vector2Int chunkCoord in Enumerators.GetSquare(Space.ChunkSize))
+				foreach (Vector2Int chunkCoord in Enumerators.GetSquare(Space.chunkSize))
 					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);
 
 				Chunk.DirtyArea area = dirtyAreas[chunk];

@@ -41,9 +41,8 @@ namespace Verse
 			cameraMoveSpeedZoomCorrection = controls.cameraMoveSpeedZoomCorrection;
 
 			Vector2Int regionCount = GetSingleton<Space.Initialization>().regionCount;
-			Space.Size spaceSize = GetSingleton<Space.Size>();
 
-			CameraController.Instance.transform.position = spaceSize.regionSize * .5f * (Vector2)regionCount / spaceSize.cellsPerMeter;
+			CameraController.Instance.transform.position = Space.regionSize * .5f * (Vector2)regionCount / Space.cellsPerMeter;
 		}
 
 		protected override void OnUpdate()
