@@ -122,21 +122,4 @@ public static class Utils
 		float mu = maxX;
 		return BellCurve(x, sigma: sigma, mu: mu) * 2.5f;
 	}
-
-	public class CoordComparer : IComparer<Vector2Int>
-	{
-		public static CoordComparer Instance;
-		static CoordComparer() => Instance = new CoordComparer();
-
-		public int Compare(Vector2Int a, Vector2Int b)
-		{
-			if (a.y > b.y)
-				return -1;
-			if (a.y < b.y || a.x < b.x)
-				return 1;
-			if (a.x > b.x)
-				return -1;
-			return 0;
-		}
-	}
 }
