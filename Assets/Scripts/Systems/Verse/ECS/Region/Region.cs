@@ -31,17 +31,17 @@ namespace Verse
 
 		public struct SpatialIndex : IComponentData
 		{
-			public Vector2Int origin;
-			public Vector2Int index;
+			public Coord origin;
+			public Coord index;
 
-			public SpatialIndex(Vector2Int spatialIndex) : this()
+			public SpatialIndex(Coord spatialIndex) : this()
 			{
 				index = spatialIndex;
 				origin = spatialIndex * Space.regionSize;
 			}
 
 			public int GetSortingWeight(int gridWidth) => gridWidth * index.y + index.x;
-			public static int GetSortingWeight(Vector2Int index, int gridWidth) => gridWidth * index.y + index.x;
+			public static int GetSortingWeight(Coord index, int gridWidth) => gridWidth * index.y + index.x;
 		}
 
 		[InternalBufferCapacity(64)]
@@ -56,7 +56,7 @@ namespace Verse
 			};
 		}
 
-		public static bool CreateAtom(EntityManager dstManager, Entity region, Entity matter, Vector2Int regionCoord)
+		public static bool CreateAtom(EntityManager dstManager, Entity region, Entity matter, Coord regionCoord)
 		{
 			Entity chunk = GetChunk(dstManager, region, regionCoord);
 			Chunk.RegionalIndex chunkIndex = dstManager.GetComponentData<Chunk.RegionalIndex>(chunk);
@@ -64,30 +64,30 @@ namespace Verse
 			return Chunk.CreateAtom(dstManager, chunk, matter, regionCoord - chunkIndex.origin);
 		}
 
-		//public static Entity GetAtom(EntityManager dstManager, Entity region, Vector2Int regionCoord)
+		//public static Entity GetAtom(EntityManager dstManager, Entity region, Coord regionCoord)
 		//{
 		//	Entity chunk = GetChunk(dstManager, region, regionCoord);
 
-		//	Vector2Int chunkCoord = regionCoord - dstManager.GetComponentData<ChunkData.RegionalIndex>(chunk).origin;
+		//	Coord chunkCoord = regionCoord - dstManager.GetComponentData<ChunkData.RegionalIndex>(chunk).origin;
 
 		//	return Chunk.GetAtom(dstManager, chunk, chunkCoord);
 		//}
 
-		public static Entity GetChunk(EntityManager dstManager, Entity region, Vector2Int regionCoord) =>
+		public static Entity GetChunk(EntityManager dstManager, Entity region, Coord regionCoord) =>
 			dstManager.GetBuffer<ChunkBufferElement>(region).GetChunk(GetChunkPos(regionCoord));
 
 		public static Entity GetChunk(this DynamicBuffer<ChunkBufferElement> chunks, int posX, int posY) =>
 			chunks[posY * Space.chunksPerRegion + posX];
-		public static Entity GetChunk(this DynamicBuffer<ChunkBufferElement> chunks, Vector2Int pos) =>
+		public static Entity GetChunk(this DynamicBuffer<ChunkBufferElement> chunks, Coord pos) =>
 			chunks.GetChunk(pos.x, pos.y);
 
-		public static Chunk.DirtyArea GetDirtyArea(this DynamicBuffer<ChunkBufferElement> chunks, EntityManager dstManager, Vector2Int pos) =>
+		public static Chunk.DirtyArea GetDirtyArea(this DynamicBuffer<ChunkBufferElement> chunks, EntityManager dstManager, Coord pos) =>
 			dstManager.GetComponentData<Chunk.DirtyArea>(chunks.GetChunk(pos));
 
 		public static Chunk.DirtyArea GetDirtyArea(this DynamicBuffer<ChunkBufferElement> chunks, EntityManager dstManager, int posX, int posY) =>
 			dstManager.GetComponentData<Chunk.DirtyArea>(chunks.GetChunk(posX, posY));
 		
-		public static Vector2Int GetChunkPos(Vector2Int regionCoord) => new(regionCoord.x / Space.chunkSize, regionCoord.y / Space.chunkSize);
+		public static Coord GetChunkPos(Coord regionCoord) => new(regionCoord.x / Space.chunkSize, regionCoord.y / Space.chunkSize);
 
 		//public static void MarkDirty(this DynamicBuffer<RegionData.ChunkBufferElement> buffer)
 		//{
@@ -102,34 +102,31 @@ namespace Verse
 				Chunk.MarkDirty(dstManager, chunk);
 		}
 
-		public static void MarkDirty(EntityManager dstManager, Entity region, RectInt regionRect, bool safe = false)
+		public static void MarkDirty(EntityManager dstManager, Entity region, CoordRect regionRect, bool safe = false)
 		{
 			if (safe)
 				regionRect.IntersectWith(Space.regionBounds);
 			
 			DynamicBuffer<ChunkBufferElement> chunks = dstManager.GetBuffer<ChunkBufferElement>(region);
 
-			Vector2Int minDist = regionRect.min.GetDivided(Space.chunkSize);
-			Vector2Int maxDist = (regionRect.max - Vector2Int.one).GetDivided(Space.chunkSize);
+			Coord minDist = regionRect.min / Space.chunkSize;
+			Coord maxDist = (regionRect.max - Coord.one) / Space.chunkSize;
 
 			for (int posY = minDist.y; posY <= maxDist.y; posY++)
 			{
 				for (int posX = minDist.x; posX <= maxDist.x; posX++)
 				{
 					Entity chunk = chunks.GetChunk(posX, posY);
-					Vector2Int chunkOrigin = dstManager.GetComponentData<Chunk.RegionalIndex>(chunk).origin; 
+					Coord chunkOrigin = dstManager.GetComponentData<Chunk.RegionalIndex>(chunk).origin; 
 					Chunk.MarkDirty(
 						dstManager, chunk,
-						new RectInt(
-							regionRect.min - chunkOrigin,
-							regionRect.size
-						)
+						regionRect - chunkOrigin
 					);
 				}
 			}
 		}
 
-		public static bool RemoveAtom(EntityManager dstManager, Entity region, Vector2Int regionCoord)
+		public static bool RemoveAtom(EntityManager dstManager, Entity region, Coord regionCoord)
 		{
 			Entity chunk = GetChunk(dstManager, region, regionCoord);
 			Chunk.RegionalIndex chunkIndex = dstManager.GetComponentData<Chunk.RegionalIndex>(chunk);

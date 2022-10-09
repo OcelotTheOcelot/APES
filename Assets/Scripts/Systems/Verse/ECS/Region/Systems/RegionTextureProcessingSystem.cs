@@ -6,6 +6,7 @@ using Unity.Transforms;
 using UnityEngine;
 using Unity.Burst;
 using System.Runtime.InteropServices;
+using Unity.Jobs;
 
 namespace Verse
 {
@@ -43,9 +44,6 @@ namespace Verse
 
 		protected override void OnUpdate()
 		{
-			//Texture2D texture = sprite.texture;
-			//texture.GetRawTextureData<Color32>();
-
 			new RebuildChunkTextureJobBurstable
 			{
 				emptyColor = emptyColorBurst,
@@ -55,16 +53,6 @@ namespace Verse
 				chunkBuffers = GetBufferLookup<Region.ChunkBufferElement>(),
 				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>()
 			}.Run(textureQuery);
-
-			//new RebuildChunkTextureJobMainThread
-			//{
-			//	emptyColor = emptyColor,
-			//	atomColors = GetComponentLookup<Atom.Color>(),
-			//	dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
-			//	regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
-			//	chunkBuffers = GetBufferLookup<Region.ChunkBufferElement>(),
-			//	atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>()
-			//}.Run(textureQuery);
 		}
 
 		// [BurstCompile]
@@ -84,7 +72,6 @@ namespace Verse
 			[ReadOnly]
 			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
 
-
 			public void Execute(in RegionTexture.OwningRegion owningRegion, in SpriteRenderer renderer)
 			{
 				Texture2D texture = renderer.sprite.texture;
@@ -97,15 +84,15 @@ namespace Verse
 					if (!dirtyArea.active)
 						continue;
 
-					Vector2Int regionalOrigin = regionalIndexes[chunk].origin;
+					Coord regionalOrigin = regionalIndexes[chunk].origin;
 					int regionalOriginOffset = regionalOrigin.y * Space.regionSize + regionalOrigin.x;
 
 					var atoms = atomBuffers[chunk];
 					for (int y = dirtyArea.from.y; y <= dirtyArea.to.y; y++)
 					{
 						for (int x = dirtyArea.from.x; x <= dirtyArea.to.x; x++)
-						{
-							int regionalAdditiveOffset = y * Space.regionSize + x;
+                        {
+                            int regionalAdditiveOffset = y * Space.regionSize + x;
 							data[regionalOriginOffset + regionalAdditiveOffset] = GetColorOf(atoms[y * Space.chunkSize + x]);
 						}
 					}
@@ -124,7 +111,7 @@ namespace Verse
 					return deferredColor;
 
 				return atomColors[atom].color;
-            }
+			}
 		}
 
 		public partial struct CreateEmptyTextureJob : IJobEntity

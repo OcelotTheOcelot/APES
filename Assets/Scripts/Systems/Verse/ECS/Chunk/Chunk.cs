@@ -9,10 +9,10 @@ namespace Verse
 	{
 		public struct RegionalIndex : IComponentData
 		{
-			public Vector2Int index;
-			public Vector2Int origin;
+			public Coord index;
+			public Coord origin;
 
-			public RegionalIndex(Vector2Int position)
+			public RegionalIndex(Coord position)
 			{
 				index = position;
 				origin = position * Space.chunkSize;
@@ -21,7 +21,7 @@ namespace Verse
 
 		public struct SpatialIndex : IComponentData
 		{
-			public Vector2Int origin;
+			public Coord origin;
 
 			public SpatialIndex(Verse.Region.SpatialIndex regionIndex, RegionalIndex index)
 			{
@@ -67,16 +67,16 @@ namespace Verse
 				this.batchIndex = batchIndex;
 			}
 
-			public ProcessingBatchIndex(Vector2Int gridPos)
+			public ProcessingBatchIndex(Coord gridPos)
 			{
 				batchIndex = GetIndexFromGridPos(gridPos);
 			}
 
-			public static int GetIndexFromGridPos(Vector2Int gridPos) => GetIndexFromGridPos(gridPos.x & 0b1, gridPos.y & 0b1);
+			public static int GetIndexFromGridPos(Coord gridPos) => GetIndexFromGridPos(gridPos.x & 0b1, gridPos.y & 0b1);
 			public static int GetIndexFromGridPos(int gridXOddity, int gridYOddity) => (gridYOddity << 1) + gridXOddity;
 		}
 
-		public static bool CreateAtom(EntityManager dstManager, Entity chunk, Entity matterPrefab, Vector2Int chunkCoord)
+		public static bool CreateAtom(EntityManager dstManager, Entity chunk, Entity matterPrefab, Coord chunkCoord)
 		{
 			Entity atom = dstManager.CreateEntity(Archetypes.Atom);
 
@@ -95,12 +95,12 @@ namespace Verse
 			return true;
 		}
 
-		public static Entity GetAtom(EntityManager dstManager, Entity chunk, Vector2Int chunkCoord) =>
+		public static Entity GetAtom(EntityManager dstManager, Entity chunk, Coord chunkCoord) =>
 			GetAtom(dstManager, chunk, chunkCoord.x, chunkCoord.y);
 		public static Entity GetAtom(EntityManager dstManager, Entity chunk, int chunkCoordX, int chunkCoordY) =>
 			dstManager.GetBuffer<AtomBufferElement>(chunk).GetAtom(chunkCoordX, chunkCoordY);
 
-		internal static bool RemoveAtom(EntityManager dstManager, Entity chunk, Vector2Int chunkCoord)
+		internal static bool RemoveAtom(EntityManager dstManager, Entity chunk, Coord chunkCoord)
 		{
 			var atoms = dstManager.GetBuffer<AtomBufferElement>(chunk);
 			// dstManager.DestroyEntity(atoms.GetAtom(chunkCoord));

@@ -43,35 +43,34 @@ namespace Verse
 			}
 		}
 
-		public void Paint(Vector2Int center, int brushSize, Entity matter)
+		public void Paint(Coord center, int brushSize, Entity matter)
 		{
 			if (matter == Entity.Null)
 				return;
 
-			foreach (Vector2Int spaceCoord in Enumerators.GetCircle(center: center, radius: brushSize))
+			foreach (Coord spaceCoord in Enumerators.GetCircle(center: center, radius: brushSize))
 				Space.CreateAtom(EntityManager, space, matter, spaceCoord);
 
 			UpdateBrushSquare(center, brushSize);
 		}
 
-		public void Erase(Vector2Int center, int brushSize)
+		public void Erase(Coord center, int brushSize)
 		{
-			foreach (Vector2Int spaceCoord in Enumerators.GetCircle(center: center, radius: brushSize))
+			foreach (Coord spaceCoord in Enumerators.GetCircle(center: center, radius: brushSize))
 				Space.RemoveAtom(EntityManager, space, spaceCoord);
 
 			UpdateBrushSquare(center, brushSize);
 		}
 
-		private void UpdateBrushSquare(Vector2Int center, int brushSize)
+		private void UpdateBrushSquare(Coord center, int brushSize)
 		{
 			int inflatedSize = brushSize + 1;
-			int doubleInflated = (inflatedSize << 1) + 1;
 
-			RectInt rect = new(
+			CoordRect rect = new(
 				center.x - inflatedSize,
 				center.y - inflatedSize,
-				doubleInflated,
-				doubleInflated
+				center.x + inflatedSize,
+				center.y + inflatedSize
 			);
 
 			Space.MarkDirty(EntityManager, space, rect, safe: true);

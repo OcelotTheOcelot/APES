@@ -1,14 +1,10 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.InputSystem.Interactions;
 
 namespace Verse.WorldGen
 {
@@ -88,39 +84,36 @@ namespace Verse.WorldGen
 
 			private void ProcessChunk(Entity chunk, Region.SpatialIndex regionIndex)
 			{
-				Vector2Int chunkOrigin = regionalIndexes[chunk].origin;
+				Coord chunkOrigin = regionalIndexes[chunk].origin;
 
 				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.SetBuffer<Chunk.AtomBufferElement>(chunk);
 				foreach (Chunk.AtomBufferElement oldAtom in atomBuffers[chunk])
 					atomBuffer.Add(oldAtom);
 
-				foreach (Vector2Int chunkCoord in Enumerators.GetSquare(Space.chunkSize))
+				foreach (Coord chunkCoord in Enumerators.GetSquare(Space.chunkSize))
 					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);
 
 				Chunk.DirtyArea area = dirtyAreas[chunk];
+
 				area.MarkDirty();
+
 				commandBuffer.SetComponent(chunk, area);
 			}
 
-			private void ProcessCell(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Vector2Int regionOrigin, Vector2Int chunkOrigin, Vector2Int chunkCoord)
+			private void ProcessCell(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord regionOrigin, Coord chunkOrigin, Coord chunkCoord)
 			{
-				Vector2Int regionCoord = chunkOrigin + chunkCoord;
-				Vector2Int spaceCoord = regionOrigin + regionCoord;
+				Coord regionCoord = chunkOrigin + chunkCoord;
+				Coord spaceCoord = regionOrigin + regionCoord;
 
 				float additiveHeight = noise[regionCoord.x];
 
 				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
-				{
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
-				}
-				else if (spaceCoord.y > 512-64)
-				{
+				else if (spaceCoord.y > 512 * 1 - 64)
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
-
-				}
 			}
 
-			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Vector2Int chunkCoord, Entity matter)
+			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord chunkCoord, Entity matter)
 			{
 				Entity atom = commandBuffer.CreateEntity(Archetypes.Atom);
 				commandBuffer.SetComponent(atom, new Atom.Matter(matter));

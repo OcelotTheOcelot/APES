@@ -9,44 +9,32 @@ namespace Verse
 		public struct DirtyArea : IComponentData
 		{
 			public bool active;
+			public CoordRect rect;
 
-			public Vector2Int from;
-			public Vector2Int to;
+			public Coord from => rect.min;
+			public Coord to => rect.max;
 
-			private static readonly Vector2Int maxSize = new(Space.chunkSize - 1, Space.chunkSize - 1);
+			private static readonly Coord maxSize = new(Space.chunkSize - 1, Space.chunkSize - 1);
+			public Coord Size => rect.Size;
+			public int Area => rect.Area;
 
-			public Vector2Int Size => to - from + Vector2Int.one;
-
-			public IEnumerable<Vector2Int> AllCoords
-			{
-				get
-				{
-					if (!active)
-						yield break;
-
-					for (int y = from.y; y <= to.y; y++)
-						for (int x = from.x; x <= to.x; x++)
-							yield return new Vector2Int(x, y);
-				}
-			}
-
-			public void MarkDirty(Vector2Int chunkCoord, bool safe = false)
+			public void MarkDirty(Coord chunkCoord, bool safe = false)
 			{
 				if (safe)
-					chunkCoord.Clamp(Vector2Int.zero, maxSize);
+					chunkCoord.Clamp(Coord.zero, maxSize);
 
 				if (!active)
 				{
-					from = chunkCoord;
-					to = chunkCoord;
-
+					rect.min = rect.max = chunkCoord;
 					active = true;
 
 					return;
 				}
 
-				from = Vector2Int.Min(from, chunkCoord);
-				to = Vector2Int.Max(to, chunkCoord);
+				rect.Set(
+					Coord.Min(from, chunkCoord),
+					Coord.Max(to, chunkCoord)
+				);
 			}
 
 			public void MarkDirty(int x, int y)
@@ -68,34 +56,30 @@ namespace Verse
 			public void MarkDirty()
 			{
 				active = true;
-
-				from = Vector2Int.zero;
-				to = maxSize;
+				rect = new(Coord.zero, maxSize);
 			}
 
-			public void MarkDirty(RectInt chunkRect, bool safe)
+			public void MarkDirty(CoordRect chunkRect, bool safe)
 			{
 				if (safe && !chunkRect.IntersectWith(Space.chunkBounds))
 					return;
 
 				if (!active)
 				{
-					from = chunkRect.min;
-					to = chunkRect.max;
-
+					rect = chunkRect;
 					active = true;
 
 					return;
 				}
 
-				from = Vector2Int.Min(from, chunkRect.min);
-				to = Vector2Int.Max(to, chunkRect.max);
+				rect.min = Coord.Min(rect.min, chunkRect.min);
+				rect.max = Coord.Max(rect.max, chunkRect.max);
 			}
 
-			public override string ToString() => active ? $"[{from}–{to}]" : "[empty]";
-        }
+			public override string ToString() => active ? $"{rect}" : "[empty]";
+		}
 
-		public static void MarkDirty(EntityManager dstManager, Entity chunk, RectInt rect, bool safe = true)
+		public static void MarkDirty(EntityManager dstManager, Entity chunk, CoordRect rect, bool safe = true)
 		{
 			DirtyArea area = dstManager.GetComponentData<DirtyArea>(chunk);
 			area.MarkDirty(rect, safe: safe);
@@ -109,7 +93,7 @@ namespace Verse
 			dstManager.SetComponentData(chunk, area);
 		}
 
-		public static void MarkDirtyNeighbourFallback(EntityManager dstManager, Entity chunk, Neighbourhood neighbours, RectInt dirtyRect)
+		public static void MarkDirtyNeighbourFallback(EntityManager dstManager, Entity chunk, Neighbourhood neighbours, CoordRect dirtyRect)
 		{
 			MarkDirty(dstManager, chunk, dirtyRect, safe: true);
 

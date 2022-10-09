@@ -13,7 +13,7 @@ namespace Verse
 {
 	public partial class SpaceCursorSystem : SystemBase
 	{
-		public static Vector2Int Coord
+		public static Coord Coord
 		{
 			get;
 			private set;

@@ -12,13 +12,13 @@ namespace Verse
 	{
 		public readonly static int regionSize = 512;
 		public readonly static float regionPerCell = 1f / regionSize;
-		public readonly static RectInt regionBounds = new(0, 0, regionSize - 1, regionSize - 1);
+		public readonly static CoordRect regionBounds = new(0, regionSize - 1);
 
 
 		public readonly static int chunkSize = 64;
 		public readonly static float chunkPerCell = 1f / chunkSize;
 		public readonly static int chunksPerRegion = regionSize / chunkSize;
-		public readonly static RectInt chunkBounds = new(0, 0, chunkSize - 1, chunkSize - 1);
+		public readonly static CoordRect chunkBounds = new(0, chunkSize - 1);
 
 		public readonly static float cellsPerMeter = 20f;
 		public readonly static float metersPerCell = 1f / cellsPerMeter;
@@ -27,7 +27,7 @@ namespace Verse
 
 		public struct Bounds : IComponentData
 		{
-			public RectInt spaceGridBounds;
+			public CoordRect spaceGridBounds;
 		}
 
 		public struct Colors : IComponentData
@@ -37,7 +37,7 @@ namespace Verse
 
 		public struct Initialization : IComponentData
 		{
-			public Vector2Int regionCount;
+			public Coord regionCount;
 		}
 
 		[InternalBufferCapacity(16)]
@@ -52,7 +52,7 @@ namespace Verse
 			};
 		}
 
-		public static bool RemoveAtom(EntityManager dstManager, Entity space, Vector2Int spaceCoord)
+		public static bool RemoveAtom(EntityManager dstManager, Entity space, Coord spaceCoord)
 		{
 			if (!GetRegion(dstManager, space, spaceCoord, out Entity region))
 				return false;
@@ -62,7 +62,7 @@ namespace Verse
 			return Region.RemoveAtom(dstManager, region, spaceCoord - regionIndex.origin);
 		}
 		
-		public static bool CreateAtom(EntityManager dstManager, Entity space, Entity matter, Vector2Int spaceCoord)
+		public static bool CreateAtom(EntityManager dstManager, Entity space, Entity matter, Coord spaceCoord)
 		{
 			if (!GetRegion(dstManager, space, spaceCoord, out Entity region))
 				return false;
@@ -72,12 +72,12 @@ namespace Verse
 			return Region.CreateAtom(dstManager, region, matter, spaceCoord - regionIndex.origin);
 		}
 
-		public static bool GetRegionByIndex(EntityManager dstManager, Entity space, Vector2Int regionIndex, out Entity outputRegion)
+		public static bool GetRegionByIndex(EntityManager dstManager, Entity space, Coord regionIndex, out Entity outputRegion)
 		{
 			Region.SpatialIndex targetRegionIndex = new(regionIndex);
 
 			int weight = targetRegionIndex.GetSortingWeight(
-				dstManager.GetComponentData<Bounds>(space).spaceGridBounds.width
+				dstManager.GetComponentData<Bounds>(space).spaceGridBounds.Width
 			);
 
 			var regions = dstManager.GetBuffer<RegionBufferElement>(space);
@@ -94,51 +94,44 @@ namespace Verse
 			return false;
 		}
 
-		public static bool GetRegion(EntityManager dstManager, Entity space, Vector2Int spaceCoord, out Entity outputRegion) =>
+		public static bool GetRegion(EntityManager dstManager, Entity space, Coord spaceCoord, out Entity outputRegion) =>
 			GetRegionByIndex(dstManager, space, GetRegionIndex(spaceCoord), out outputRegion);
 
-		public static Vector2Int GetRegionIndex(Vector2Int spaceCoord) =>
+		public static Coord GetRegionIndex(Coord spaceCoord) =>
 			new(
 				Mathf.FloorToInt(spaceCoord.x * regionPerCell),
 				Mathf.FloorToInt(spaceCoord.y * regionPerCell)
 			);
 
-		public static Vector2Int WorldToSpace(LocalToWorldTransform transform, float3 worldPos)
+		public static Coord WorldToSpace(LocalToWorldTransform transform, float3 worldPos)
 		{
 			float3 localPos = worldPos - transform.Value.Position;
 			localPos *= cellsPerMeter;
 
-			return new Vector2Int(
+			return new Coord(
 				Mathf.FloorToInt(localPos.x),
 				Mathf.FloorToInt(localPos.y)
 			);
 		}
 
-		public static void MarkDirty(EntityManager dstManager, Entity space, RectInt spaceRect, bool safe)
+		public static void MarkDirty(EntityManager dstManager, Entity space, CoordRect spaceRect, bool safe)
 		{
 			for (int regPosY = spaceRect.yMin / regionSize; regPosY <= ((spaceRect.yMax - 1) / regionSize); regPosY++)
 			{
 				for (int regPosX = spaceRect.xMin / regionSize; regPosX <= ((spaceRect.xMax - 1) / regionSize); regPosX++)
 				{
-					if (!GetRegionByIndex(dstManager, space, new Vector2Int(regPosX, regPosY), out Entity region))
+					if (!GetRegionByIndex(dstManager, space, new Coord(regPosX, regPosY), out Entity region))
 						continue;
+
+					Coord regionOrigin = dstManager.GetComponentData<Region.SpatialIndex>(region).origin;
 
 					Region.MarkDirty(
 						dstManager, region,
-						new RectInt(
-							SpaceToRegion(dstManager, region, spaceRect.position),
-							spaceRect.size
-						),
+						spaceRect - regionOrigin,
 						safe: safe
 					);
 				}
 			}
 		}
-
-		public static Vector2Int SpaceToRegion(EntityManager dstManager, Entity region, Vector2Int spaceRect) =>
-			SpaceToRegion(dstManager.GetComponentData<Region.SpatialIndex>(region), spaceRect);
-
-		public static Vector2Int SpaceToRegion(Region.SpatialIndex regionIndex, Vector2Int spaceCoord) =>
-			spaceCoord - regionIndex.origin;
 	}
 }

@@ -7,19 +7,19 @@ namespace Verse
 	public static class AtomBufferExtention
 	{
 		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX];
-		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, Vector2Int chunkCoord) => atoms.GetAtom(chunkCoord.x, chunkCoord.y);
+		public static Entity GetAtom(this DynamicBuffer<AtomBufferElement> atoms, Coord chunkCoord) => atoms.GetAtom(chunkCoord.x, chunkCoord.y);
 
 		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY, Entity atom) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX] = atom;
-		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, Vector2Int chunkCoord, Entity atom) => atoms.SetAtom(chunkCoord.x, chunkCoord.y, atom);
+		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, Coord chunkCoord, Entity atom) => atoms.SetAtom(chunkCoord.x, chunkCoord.y, atom);
 
 		public static bool GetAtomNeighbourFallback(
 			this DynamicBuffer<AtomBufferElement> atoms,
 			BufferLookup<AtomBufferElement> atomBuffers,
 			Neighbourhood neighbours,
-			Vector2Int chunkCoord,
+			Coord chunkCoord,
 			out Entity neighbourAtom,
 			out DynamicBuffer<AtomBufferElement> neighbourAtoms,
-			out Vector2Int neighbourCoord
+			out Coord neighbourCoord
 		)
 		{
 			int chunkSize = Space.chunkSize;
@@ -88,7 +88,7 @@ namespace Verse
 		private static bool SafeGetAtomFromPotentialChunk(
 			BufferLookup<AtomBufferElement> atomBuffers,
 			Entity chunk,
-			Vector2Int chunkCoord,
+			Coord chunkCoord,
 			ref DynamicBuffer<AtomBufferElement> atoms,
 			out Entity atom
 		)
@@ -107,7 +107,7 @@ namespace Verse
 
 		public static void Swap(
 			this DynamicBuffer<AtomBufferElement> atoms,
-			Vector2Int coordA, Vector2Int coordB
+			Coord coordA, Coord coordB
 		)
 		{
 			Entity atom = atoms.GetAtom(coordA);
@@ -116,8 +116,8 @@ namespace Verse
 		}
 
 		public static void Swap(
-			DynamicBuffer<AtomBufferElement> atomsA, Vector2Int coordA,
-			DynamicBuffer<AtomBufferElement> atomsB, Vector2Int coordB
+			DynamicBuffer<AtomBufferElement> atomsA, Coord coordA,
+			DynamicBuffer<AtomBufferElement> atomsB, Coord coordB
 		)
 		{
 			Entity atom = atomsA.GetAtom(coordA);

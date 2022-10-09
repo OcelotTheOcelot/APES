@@ -37,23 +37,19 @@ namespace Verse
 
 		protected override void OnUpdate()
 		{
-			/*
-			new DrawRegionGizmosJob
-			{
-				chunkBorderColor = new Color(.8f, .5f, 0f, .25f),
-				regionBorderColor = new Color(1f, 1f, 0f, .25f),
+			//new DrawRegionGizmosJob
+			//{
+			//	chunkBorderColor = new Color(.8f, .5f, 0f, .25f),
+			//	regionBorderColor = new Color(1f, 1f, 0f, .25f),
 
-				duration = tickDuration,
-			}.Run(regionQuery);
-			*/
+			//	duration = tickDuration,
+			//}.Run(regionQuery);
 
-			/*
-			new DrawDirtyAreaGizmosJob
-			{
-				dirtyAreaColor = new Color(1f, 0f, 0f, .25f),
-				duration = tickDuration
-			}.Run(chunkQuery);
-			*/
+			//new DrawDirtyAreaGizmosJob
+			//{
+			//	dirtyAreaColor = new Color(1f, 0f, 0f, .25f),
+			//	duration = tickDuration
+			//}.Run(chunkQuery);
 
 			new DrawNeighbourhoodGizmosJob
 			{
@@ -117,20 +113,23 @@ namespace Verse
 					return;
 
 				float metersPerCell = Space.metersPerCell;
-				float margin = .25f;
-
-				Vector2 size = area.Size - margin * 2 * Vector2.one;
+				
+				float2 margin = new(.25f);
+				Vector2 size = area.Size + Coord.one - margin * 2;
 				size *= metersPerCell;
 
-				Vector2 cornerA = (index.origin + area.from + margin * Vector2.one) * metersPerCell;
+				Vector2 cornerA = (index.origin + area.from + margin) * metersPerCell;
 				Vector2 cornerB = cornerA + new Vector2(size.x, 0);
 				Vector2 cornerC = cornerA + new Vector2(0, size.y);
-				Vector2 cornerD = cornerA + new Vector2(size.x, size.y);
+				Vector2 cornerD = cornerA + size;
 
 				Debug.DrawLine(cornerA, cornerB, dirtyAreaColor, duration: duration);
 				Debug.DrawLine(cornerA, cornerC, dirtyAreaColor, duration: duration);
 				Debug.DrawLine(cornerD, cornerB, dirtyAreaColor, duration: duration);
 				Debug.DrawLine(cornerD, cornerC, dirtyAreaColor, duration: duration);
+
+				Debug.DrawLine(cornerA, cornerC, dirtyAreaColor, duration: duration);
+				Debug.DrawLine(cornerC, cornerA, dirtyAreaColor, duration: duration);
 			}
 		}
 
@@ -141,7 +140,7 @@ namespace Verse
 
 			public void Execute(in Chunk.SpatialIndex index, ref Chunk.ProcessingBatchIndex batchIndex)
 			{
-				UnityEditor.Handles.Label((Vector2)(index.origin + new Vector2Int(Space.chunkSize / 2, Space.chunkSize / 2)) * Space.metersPerCell, $"{batchIndex}");
+				UnityEditor.Handles.Label((Vector2)(index.origin + new Coord(Space.chunkSize / 2, Space.chunkSize / 2)) * Space.metersPerCell, $"{batchIndex}");
 			}
 		}
 
@@ -158,7 +157,7 @@ namespace Verse
 				int chunkSize = Space.chunkSize;
 				float metersPerCell = Space.metersPerCell;
 
-				Vector3 center = (Vector2)(index.origin + new Vector2Int(Space.chunkSize / 2, Space.chunkSize / 2)) * metersPerCell;
+				Vector3 center = (Vector2)(index.origin + new Coord(Space.chunkSize / 2)) * metersPerCell;
 
 				float size = 4 * metersPerCell;
 				const float margin = 1;

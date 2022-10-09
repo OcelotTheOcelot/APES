@@ -13,7 +13,6 @@ namespace Verse
 	public partial class AtomPhysicsSystem : SystemBase
 	{
 		private EntityQuery chunkQuery;
-		private EntityTypeHandle entityTypeHandle;
 
 		private readonly int processingBatches = 4;
 		protected override void OnCreate()
@@ -84,58 +83,43 @@ namespace Verse
 				in Chunk.Neighbourhood neighbours
 			)
 			{
-				Chunk.DirtyArea dirtyArea = dirtyAreas[chunk];
+				Chunk.DirtyArea area = dirtyAreas[chunk];
 
-				if (!dirtyArea.active)
+				if (!area.active)
 					return;
-				dirtyArea.active = false;
+				area.active = false;
 
 				DynamicBuffer<Chunk.AtomBufferElement> atoms = atomBuffers[chunk];
 
-				Vector2Int from = dirtyArea.from, to = dirtyArea.to;
-				Vector2Int coord;
+				Coord from = area.from, to = area.to;
+				Coord coord;
 
-				int oddity = (tick + from.y) & 1;
+				int oddity = (tick + from.y) & 0b1;
+				int width = to.x - from.x;
+
 				for (int y = from.y; y <= to.y; y++)
 				{
-
-					if (oddity == 1)
+					for (int x = 0; x <= width; x++)
 					{
-						for (int x = from.x; x <= to.x; x++)
-						{
-							coord = new Vector2Int(x, y);
+                        if (oddity == 1)
+							coord = new Coord(from.x + x, y);
+						else
+							coord = new Coord(to.x - x, y);
 
-							Entity atom = atoms.GetAtom(coord);
-							if (atom == Entity.Null)
-								continue;
+						Entity atom = atoms.GetAtom(coord);
+						if (atom == Entity.Null)
+							continue;
 
-							if (atom.Index < 0)
-								continue;
+						if (atom.Index < 0)
+							continue;
 
-							ProcessAtom(ref dirtyArea, atoms, neighbours, atom, coord);
-						}
-					}
-					else
-					{
-						for (int x = to.x - 1; x >= from.x; x--)
-						{
-							coord = new Vector2Int(x, y);
-
-							Entity atom = atoms.GetAtom(coord);
-							if (atom == Entity.Null)
-								continue;
-
-							if (atom.Index < 0)
-								continue;
-
-							ProcessAtom(ref dirtyArea, atoms, neighbours, atom, coord);
-						}
+						ProcessAtom(ref area, atoms, neighbours, atom, coord);
 					}
 
 					oddity ^= 1;
 				}
 
-				dirtyAreas[chunk] = dirtyArea;
+				dirtyAreas[chunk] = area;
 			}
 
 			private void ProcessAtom(
@@ -143,7 +127,7 @@ namespace Verse
 				DynamicBuffer<Chunk.AtomBufferElement> atoms,
 				Chunk.Neighbourhood neighbours,
 				Entity atom,
-				Vector2Int atomCoord
+				Coord atomCoord
 			)
 			{
 				Entity matter = matters[atom].matter;
@@ -167,20 +151,24 @@ namespace Verse
 				}
 			}
 
+			private void ProcessSolid()
+			{
+			}
+
 			private void ProcessLiquid(
 				ref Chunk.DirtyArea dirtyArea,
 				DynamicBuffer<Chunk.AtomBufferElement> atoms,
 				Chunk.Neighbourhood neighbours,
 				Entity atomMatter,
 				Matter.PhysicProperties atomProps,
-				Vector2Int atomCoord
+				Coord atomCoord
 			)
 			{
-				var halfPendulum = (tick & 0b1) == 1 ? Enumerators.halfPendulumRight : Enumerators.halfPendulumLeft;
+				Coord[] halfPendulum = (tick & 0b1) == 1 ? Enumerators.halfPendulumRight : Enumerators.halfPendulumLeft;
 
-				foreach (Vector2Int pendulumShift in halfPendulum)
+				foreach (Coord pendulumShift in halfPendulum)
 				{
-					Vector2Int pendulumCoord = pendulumShift + atomCoord;
+					Coord pendulumCoord = atomCoord + pendulumShift;
 
 					if (!atoms.GetAtomNeighbourFallback(
 							atomBuffers,
@@ -188,7 +176,7 @@ namespace Verse
 							pendulumCoord,
 							out Entity otherAtom,
 							out DynamicBuffer<Chunk.AtomBufferElement> otherAtoms,
-							out Vector2Int otherCoord
+							out Coord otherCoord
 						))
 						continue;
 
@@ -208,7 +196,7 @@ namespace Verse
 
 					AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
 
-					RectInt dirtyRect = RectExtension.CreateRectBetween(atomCoord, pendulumCoord, margin: 1);
+					CoordRect dirtyRect = CoordRect.CreateRectBetween(atomCoord, pendulumCoord, margin: 1);
 
 					dirtyArea.MarkDirty(dirtyRect, safe: true);
 					neighbours.MarkDirty(dirtyAreas, dirtyRect, safe: true);

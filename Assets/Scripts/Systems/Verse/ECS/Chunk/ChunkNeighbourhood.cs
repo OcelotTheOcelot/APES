@@ -20,7 +20,7 @@ namespace Verse
 
 			public void MarkDirty(
 				ComponentLookup<DirtyArea> dirtyAreas,
-				RectInt dirtyRect,
+				CoordRect dirtyRect,
 				bool safe
 			)
 			{
@@ -54,7 +54,7 @@ namespace Verse
 					MarkDirtyIfExists(dirtyAreas, South, dirtyRect.GetShifted(0, Space.chunkSize), safe);
 			}
 
-			private static void MarkDirtyIfExists(ComponentLookup<DirtyArea> dirtyAreas, Entity chunk, RectInt rect, bool safe = true)
+			private static void MarkDirtyIfExists(ComponentLookup<DirtyArea> dirtyAreas, Entity chunk, CoordRect rect, bool safe = true)
 			{
 				if (chunk == Entity.Null)
 					return;

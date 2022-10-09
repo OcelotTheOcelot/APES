@@ -38,8 +38,8 @@ namespace Verse
 
 			// innerChunkPositions = new(1, 1, Space.ChunksPerRegion - 1, Space.ChunksPerRegion - 1);
 
-			Vector2Int regionCount = GetSingleton<Space.Initialization>().regionCount;
-			foreach (Vector2Int chunkPos in Enumerators.GetRect(regionCount))
+			Coord regionCount = GetSingleton<Space.Initialization>().regionCount;
+			foreach (Coord chunkPos in Enumerators.GetRect(regionCount))
 				InstantiateRegion(chunkPos);
 
 			Debug.Log($"Space of {regionCount.x} by {regionCount.y} chunks has been created.");
@@ -47,7 +47,7 @@ namespace Verse
 
 		protected override void OnUpdate() {}
 
-		private void InstantiateRegion(Vector2Int regionPos)
+		private void InstantiateRegion(Coord regionPos)
 		{
 			Entity region = EntityManager.Instantiate(Prefabs.Region);
 
@@ -59,7 +59,7 @@ namespace Verse
 
 			InsertRegion(regions, region, regionPos);
 
-			Vector2 positionOffset = regionPos * Space.regionSize;
+			float2 positionOffset = regionPos * Space.regionSize;
 			positionOffset *= Space.metersPerCell;
 
 			LocalToWorldTransform transform = EntityManager.GetComponentData<LocalToWorldTransform>(region);
@@ -72,7 +72,7 @@ namespace Verse
 				{ state = Region.Processing.State.PendingGeneration }
 			);
 
-			foreach (Vector2Int regionalPos in Enumerators.GetSquare(Space.chunksPerRegion))
+			foreach (Coord regionalPos in Enumerators.GetSquare(Space.chunksPerRegion))
 			{
 				Entity chunk = EntityManager.CreateEntity(chunkArchetype);
 
@@ -144,7 +144,7 @@ namespace Verse
 			DynamicBuffer<Region.ChunkBufferElement> thisChunks = EntityManager.GetBuffer<Region.ChunkBufferElement>(region);
 			int maxChunkIndex = Space.chunksPerRegion * Space.chunksPerRegion - 1;
 
-			if (Space.GetRegionByIndex(EntityManager, space, regionPos + Vector2Int.left, out Entity westernRegion))
+			if (Space.GetRegionByIndex(EntityManager, space, regionPos + Coord.west, out Entity westernRegion))
 			{
 				for (int thisRegionChunkIndex = 0; thisRegionChunkIndex < maxChunkIndex; thisRegionChunkIndex += Space.chunksPerRegion)
 				{
@@ -192,17 +192,16 @@ namespace Verse
 
 
 
-		public void InsertRegion(DynamicBuffer<Space.RegionBufferElement> regions, Entity region, Vector2Int spatialPos)
+		public void InsertRegion(DynamicBuffer<Space.RegionBufferElement> regions, Entity region, Coord spatialPos)
 		{
-			RectInt rect = GetSingleton<Space.Bounds>().spaceGridBounds;
-			rect.SetMinMax(
-				Vector2Int.Min(rect.min, spatialPos),
-				Vector2Int.Max(rect.max, spatialPos)
+			CoordRect rect = GetSingleton<Space.Bounds>().spaceGridBounds;
+			rect.Set(
+				Coord.Min(rect.min, spatialPos),
+				Coord.Max(rect.max, spatialPos)
 			);
 			SetSingleton(new Space.Bounds() { spaceGridBounds = rect });
 
-			int width = rect.width;
-
+			int width = rect.Width;
 			int weight = Region.SpatialIndex.GetSortingWeight(spatialPos, width);
 
 			int length = regions.Length;

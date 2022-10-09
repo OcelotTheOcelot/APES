@@ -190,7 +190,7 @@ namespace Apes.Camera
 		public bool RemovePOI(GameObject poi) => RemovePOI(poi.transform);
 		public bool RemovePOI(Transform poi) => points.Remove(poi);
 
-		public Vector3 LimitCamera(Vector3 target)//, RectInt bounds)
+		public Vector3 LimitCamera(Vector3 target)//, CoordRect bounds)
 		{
 				//Vector2 origin = bounds.transform.position;
 				//Vector2 size = (Vector2)bounds.WorldSize / bounds.cellsPerMeter;
