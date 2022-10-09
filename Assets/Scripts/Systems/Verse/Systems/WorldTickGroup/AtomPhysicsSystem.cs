@@ -30,11 +30,6 @@ namespace Verse
 			chunkQuery.AddSharedComponentFilter(new Chunk.ProcessingBatchIndex(-1));
 		}
 
-		protected override void OnStartRunning()
-		{
-			base.OnStartRunning();
-		}
-
 		protected override void OnUpdate()
 		{
 			int tick = TickerSystem.CurrentTick;
