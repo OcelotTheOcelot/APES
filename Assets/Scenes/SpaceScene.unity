@@ -157,7 +157,7 @@ MonoBehaviour:
     cameraPanningSpeed: 10
     cameraMoveSpeed: 10
     cameraZoomSpeed: 10
-    cameraZoomSmoothing: 10
+    cameraZoomSmoothing: 5
     cameraMoveSpeedZoomCorrection: 10
 --- !u!4 &596715479
 Transform:
@@ -219,6 +219,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   regionPrefab: {fileID: 6080396952095335707, guid: 54544c07c7607cb40adca7be71c74ec2, type: 3}
+  chunkPrefab: {fileID: 8228436298530310338, guid: 93e20c416302bff4bb9513ba715bdb5d, type: 3}
 --- !u!1 &1517444128
 GameObject:
   m_ObjectHideFlags: 0
@@ -394,4 +395,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 911cb900ae324cc4cae69a426aeff945, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ticksPerSecond: 60
+  tickerSettings:
+    ticksPerSecond: 60
+    mode: 0

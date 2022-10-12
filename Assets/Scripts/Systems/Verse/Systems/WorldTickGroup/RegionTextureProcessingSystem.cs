@@ -33,14 +33,14 @@ namespace Verse
 			emptyColor = GetSingleton<Space.Colors>().emptySpaceColor;
 			emptyColorBurst = new(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a);
 
-			EntityQuery emptyTextureQuery = GetEntityQuery(
+			EntityQuery textureInitializationQuery = GetEntityQuery(
 				ComponentType.ReadWrite<LocalToWorldTransform>(),
 				ComponentType.ReadOnly<SpriteRenderer>()
 			);
 			new CreateEmptyTextureJob
 			{
 				emptyColor = emptyColor
-			}.Run(emptyTextureQuery);
+			}.Run(textureInitializationQuery);
 		}
 
 		protected override void OnUpdate()
@@ -73,7 +73,10 @@ namespace Verse
 			[ReadOnly]
 			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
 
-			public void Execute(in RegionTexture.OwningRegion owningRegion, in SpriteRenderer renderer)
+			public void Execute(
+				[ReadOnly] in RegionTexture.OwningRegion owningRegion,
+				[ReadOnly] in SpriteRenderer renderer
+			)
 			{
 				Texture2D texture = renderer.sprite.texture;
 
@@ -105,8 +108,6 @@ namespace Verse
 
 				texture.LoadRawTextureData(data);
 				texture.Apply();
-
-				// Graphics.Blit(texture, renderer.material);
 			}
 
 			private Pixel GetColorOf(Entity atom)
@@ -136,7 +137,6 @@ namespace Verse
 				);
 			}
 		}
-
 
 		public static Texture2D GenerateEmptyTexture(int width, int height, Color32 empty)
 		{

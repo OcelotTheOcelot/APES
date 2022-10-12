@@ -58,22 +58,13 @@ namespace Verse
 
 		public static bool CreateAtom(EntityManager dstManager, Entity region, Entity matter, Coord regionCoord)
 		{
-			Entity chunk = GetChunk(dstManager, region, regionCoord);
+			Entity chunk = GetChunkAtCoord(dstManager, region, regionCoord);
 			Chunk.RegionalIndex chunkIndex = dstManager.GetComponentData<Chunk.RegionalIndex>(chunk);
 
 			return Chunk.CreateAtom(dstManager, chunk, matter, regionCoord - chunkIndex.origin);
 		}
 
-		//public static Entity GetAtom(EntityManager dstManager, Entity region, Coord regionCoord)
-		//{
-		//	Entity chunk = GetChunk(dstManager, region, regionCoord);
-
-		//	Coord chunkCoord = regionCoord - dstManager.GetComponentData<ChunkData.RegionalIndex>(chunk).origin;
-
-		//	return Chunk.GetAtom(dstManager, chunk, chunkCoord);
-		//}
-
-		public static Entity GetChunk(EntityManager dstManager, Entity region, Coord regionCoord) =>
+		public static Entity GetChunkAtCoord(EntityManager dstManager, Entity region, Coord regionCoord) =>
 			dstManager.GetBuffer<ChunkBufferElement>(region).GetChunk(GetChunkPos(regionCoord));
 
 		public static Entity GetChunk(this DynamicBuffer<ChunkBufferElement> chunks, int posX, int posY) =>
@@ -128,7 +119,7 @@ namespace Verse
 
 		public static bool RemoveAtom(EntityManager dstManager, Entity region, Coord regionCoord)
 		{
-			Entity chunk = GetChunk(dstManager, region, regionCoord);
+			Entity chunk = GetChunkAtCoord(dstManager, region, regionCoord);
 			Chunk.RegionalIndex chunkIndex = dstManager.GetComponentData<Chunk.RegionalIndex>(chunk);
 
 			return Chunk.RemoveAtom(dstManager, chunk, regionCoord - chunkIndex.origin);

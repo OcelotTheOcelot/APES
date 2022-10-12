@@ -34,7 +34,12 @@ namespace Verse
 			public Entity region;
 		}
 
-		[InternalBufferCapacity(64)]
+        public struct ColliderStatus : IComponentData
+        {
+            public bool pendingRebuild;
+        }
+
+        [InternalBufferCapacity(64)]
 		public struct AtomBufferElement : IBufferElementData
 		{
 			public Entity atom;
@@ -49,28 +54,13 @@ namespace Verse
 		/// <summary>
 		/// Determines order in which clusters should be processed.
 		/// Clusters with the same number can be safely processed simultaneously.
-		/// I'm lazy so I'll just illustrate:
-		/// 
-		/// 0 1 0 1 0 1
-		/// 2 3 2 3 2 3
-		/// 0 1 0 1 0 1
-		/// 2 3 2 3 2 3
-		/// 
-		/// So that chunks with same index can be processed at the same time.
 		/// </summary>
 		public struct ProcessingBatchIndex : ISharedComponentData
 		{
 			public int batchIndex;
 
-			public ProcessingBatchIndex(int batchIndex)
-			{
-				this.batchIndex = batchIndex;
-			}
-
-			public ProcessingBatchIndex(Coord gridPos)
-			{
-				batchIndex = GetIndexFromGridPos(gridPos);
-			}
+			public ProcessingBatchIndex(int batchIndex) { this.batchIndex = batchIndex; }
+			public ProcessingBatchIndex(Coord gridPos) { batchIndex = GetIndexFromGridPos(gridPos); }
 
 			public static int GetIndexFromGridPos(Coord gridPos) => GetIndexFromGridPos(gridPos.x & 0b1, gridPos.y & 0b1);
 			public static int GetIndexFromGridPos(int gridXOddity, int gridYOddity) => (gridYOddity << 1) + gridXOddity;

@@ -14,11 +14,12 @@ namespace Verse
 			base.OnStartRunning();
 
 			Prefabs.RegisterCorePrefabs(
-				region: GetSingleton<Prefabs.RegionPrefab>().prefab
+				region: GetSingleton<Prefabs.RegionPrefab>().prefab,
+				chunk: GetSingleton<Prefabs.ChunkPrefab>().prefab
 			);
 
 			Archetypes.RegisterArchetypes(
-				EntityManager.CreateArchetype(
+				atom: EntityManager.CreateArchetype(
 					ComponentType.ReadWrite<Atom.Matter>(),
 					ComponentType.ReadWrite<Color>(),
 					ComponentType.ReadWrite<Temperature>()
