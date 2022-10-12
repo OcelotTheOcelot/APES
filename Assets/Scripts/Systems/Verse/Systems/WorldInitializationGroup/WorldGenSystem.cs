@@ -36,12 +36,18 @@ namespace Verse.WorldGen
 
 			noise = new NativeArray<float>(Space.regionSize, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
+		}
+
+		protected override void OnUpdate()
+		{
 			EntityCommandBuffer commandBuffer = GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
 			var handle = new GenerateRegionJob()
 			{
 				terrainGenerationData = GetSingleton<TerrainGenerationData>(),
 
 				dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
+				colliders = GetComponentLookup<Chunk.ColliderStatus>(),
+
 				regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
 				creationDatas = GetComponentLookup<Matter.Creation>(),
 				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(),
@@ -50,16 +56,14 @@ namespace Verse.WorldGen
 				commandBuffer = commandBuffer
 			}.Schedule(regionQuery, Dependency);
 			handle.Complete();
-			endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(Dependency);
-		}
 
-		protected override void OnUpdate()
-		{
+			endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(handle);
 		}
 
 		public partial struct GenerateRegionJob : IJobEntity
 		{
 			public ComponentLookup<Chunk.DirtyArea> dirtyAreas;
+			public ComponentLookup<Chunk.ColliderStatus> colliders;
 			[ReadOnly]
 			public ComponentLookup<Chunk.RegionalIndex> regionalIndexes;
 			[ReadOnly]
@@ -72,7 +76,7 @@ namespace Verse.WorldGen
 			public EntityCommandBuffer commandBuffer;
 			public NativeArray<float> noise;
 
-			public void Execute(in Region.SpatialIndex regionIndex, in DynamicBuffer<Region.ChunkBufferElement> chunks)
+			public void Execute(Entity region, in Region.SpatialIndex regionIndex, in DynamicBuffer<Region.ChunkBufferElement> chunks)
 			{
 				int originX = regionIndex.origin.x;
 				for (int x = 0; x < Space.regionSize; x++)
@@ -80,6 +84,8 @@ namespace Verse.WorldGen
 
 				foreach (Entity chunk in chunks)
 					ProcessChunk(chunk, regionIndex);
+
+				commandBuffer.SetSharedComponent(region, new Region.Processing() { state = Region.Processing.State.Active });
 			}
 
 			private void ProcessChunk(Entity chunk, Region.SpatialIndex regionIndex)
@@ -94,10 +100,12 @@ namespace Verse.WorldGen
 					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);
 
 				Chunk.DirtyArea area = dirtyAreas[chunk];
-
 				area.MarkDirty();
-
 				commandBuffer.SetComponent(chunk, area);
+
+				Chunk.ColliderStatus collider = colliders[chunk];
+				collider.pendingRebuild = true;
+				commandBuffer.SetComponent(chunk, collider);
 			}
 
 			private void ProcessCell(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord regionOrigin, Coord chunkOrigin, Coord chunkCoord)
@@ -109,8 +117,6 @@ namespace Verse.WorldGen
 
 				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
-				else if (spaceCoord.y > 512 * 1 - 64)
-					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
 			}
 
 			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord chunkCoord, Entity matter)
@@ -123,15 +129,6 @@ namespace Verse.WorldGen
 				commandBuffer.SetComponent(atom, new Atom.Temperature(creationData.temperature));
 
 				atomBuffer.SetAtom(chunkCoord, atom);
-			}
-		}
-
-		[BurstCompile]
-		public partial struct MarkDirtyJob : IJobEntity
-		{
-			public void Execute(ref Chunk.DirtyArea dirtyArea)
-			{
-				dirtyArea.MarkDirty();
 			}
 		}
 	}

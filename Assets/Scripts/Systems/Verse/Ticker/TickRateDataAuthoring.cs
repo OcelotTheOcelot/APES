@@ -6,19 +6,29 @@ namespace Verse
 {
 	public class TickerDataAuthoring : MonoBehaviour
 	{
-		public float ticksPerSecond;
+		public TickerSettings tickerSettings;
 
 		public class Baker : Baker<TickerDataAuthoring>
 		{
 			public override void Bake(TickerDataAuthoring authoring)
 			{
-				AddComponent(new TickRate { ticksPerSecond = authoring.ticksPerSecond });
+				AddComponent(authoring.tickerSettings);
 			}
 		}
 	}
 
-	public struct TickRate : IComponentData
+	[Serializable]
+	public struct TickerSettings : IComponentData
 	{
 		public float ticksPerSecond;  // default is 60f;
+		public Mode mode;
+		
+		public enum Mode
+		{
+			limited = 0,
+			unlimited = 1,
+			compensating = 2,
+			immediatelyCompensating = 3
+		}
 	}
 }

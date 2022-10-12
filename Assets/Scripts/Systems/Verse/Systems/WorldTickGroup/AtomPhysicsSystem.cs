@@ -40,11 +40,12 @@ namespace Verse
 			var dirtyAreas = GetComponentLookup<Chunk.DirtyArea>();
 			var atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>();
 
+			JobHandle jobHandle = default;
 			for (int i = 0; i < processingBatches; i++)
 			{
 				chunkQuery.SetSharedComponentFilter(new Chunk.ProcessingBatchIndex { batchIndex = i });
 
-				new ProcessChunkJob
+				jobHandle = new ProcessChunkJob
 				{
 					tick = tick,
 					matters = matters,
@@ -52,7 +53,8 @@ namespace Verse
 					physicProperties = physProps,
 					dirtyAreas = dirtyAreas,
 					atomBuffers = atomBuffers
-				}.ScheduleParallel(chunkQuery, Dependency).Complete();
+				}.ScheduleParallel(chunkQuery, jobHandle);
+				jobHandle.Complete();
 			}
 		}
 

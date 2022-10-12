@@ -32,7 +32,7 @@ namespace Verse
 		{
 			base.OnStartRunning();
 
-			tickDuration = 1f / GetSingleton<TickRate>().ticksPerSecond;
+			tickDuration = 1f / GetSingleton<TickerSettings>().ticksPerSecond;
 		}
 
 		protected override void OnUpdate()
