@@ -8,7 +8,7 @@ namespace Verse
 	public class ChunkDataAuthoring : MonoBehaviour
 	{
 		[SerializeField]
-		private PolygonCollider2D chunkCollider;
+		private MeshCollider chunkCollider;
 
 		public class Baker : Baker<ChunkDataAuthoring>
 		{

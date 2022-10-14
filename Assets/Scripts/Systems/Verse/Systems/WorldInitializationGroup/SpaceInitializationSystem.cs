@@ -29,7 +29,7 @@ namespace Verse
 				ComponentType.ReadWrite<Chunk.Neighbourhood>(),
 				ComponentType.ReadWrite<Chunk.ProcessingBatchIndex>(),
 				ComponentType.ReadWrite<Chunk.AtomBufferElement>(),
-				ComponentType.ReadWrite<PolygonCollider2D>()
+				ComponentType.ReadWrite<MeshCollider>()
 			);
 		}
 
@@ -84,8 +84,8 @@ namespace Verse
 
 				EntityManager.SetComponentData(chunk, new Chunk.Region() { region = region });
 
-				bool hasComp = EntityManager.HasComponent<PolygonCollider2D>(chunk);
-				var polCol2d = EntityManager.GetComponentObject<PolygonCollider2D>(chunk);
+				bool hasComp = EntityManager.HasComponent<MeshCollider>(chunk);
+				var polCol2d = EntityManager.GetComponentObject<MeshCollider>(chunk);
 				Debug.Log($"Collider: {hasComp}; {polCol2d != null}");
 
 				Chunk.RegionalIndex regionalIndex = new(regionalPos);
