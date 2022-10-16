@@ -1,15 +1,11 @@
 using Unity.Entities;
 using Unity.Collections;
-using Unity.Mathematics;
-using Unity.Transforms;
 using System.Linq;
 using UnityEngine;
 using Unity.Burst;
 using System.Runtime.InteropServices;
 using Unity.Jobs;
-using System;
 using Unity.Collections.LowLevel.Unsafe;
-using System.Runtime.CompilerServices;
 
 namespace Verse
 {
@@ -18,11 +14,11 @@ namespace Verse
 	public partial class RegionTextureProcessingSystem : SystemBase
 	{
 		private readonly static Pixel deferredColor = new(255, 0, 255, 255);
-        
+		
 		private EntityQuery textureQuery;
-        private UnsafeList<NativeArray<Pixel>> pixelData;
+		private UnsafeList<NativeArray<Pixel>> pixelData;
 
-        private Color32 emptyColor;
+		private Color32 emptyColor;
 		private Pixel emptyColorBurst;
 
 		protected override void OnCreate()
@@ -31,7 +27,7 @@ namespace Verse
 			RequireForUpdate<Space.Tag>();
 
 			pixelData = new(1, Allocator.Persistent);
-        }
+		}
 
 		protected override void OnStartRunning()
 		{
@@ -53,8 +49,9 @@ namespace Verse
 
 		protected override void OnUpdate()
 		{
-			int regionsToUpdate = textureQuery.CalculateEntityCount();
-			pixelData.Length = regionsToUpdate;
+			// For consistent indexing, it's important that we use the ame query (I guess)
+			int regionsAmount = textureQuery.CalculateEntityCount();
+			pixelData.Length = regionsAmount;
 
 			new GetPixelDataJob
 			{
@@ -79,10 +76,10 @@ namespace Verse
 
 		private partial struct GetPixelDataJob : IJobEntity
 		{
+			[WriteOnly]
 			public UnsafeList<NativeArray<Pixel>> outputData;
 
-
-			unsafe public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
+			public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
 			{
 				Texture2D texture = renderer.sprite.texture;
 
@@ -90,9 +87,10 @@ namespace Verse
 			}
 		}
 
-		unsafe private partial struct LoadPixelDataJob : IJobEntity
+		private partial struct LoadPixelDataJob : IJobEntity
 		{
-			public UnsafeList<NativeArray<Pixel>> inputData;
+            [ReadOnly]
+            public UnsafeList<NativeArray<Pixel>> inputData;
 
 			public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
 			{
@@ -123,7 +121,7 @@ namespace Verse
 			[WriteOnly]
 			public UnsafeList<NativeArray<Pixel>> pixelData;
 
-			unsafe public void Execute(
+			public void Execute(
 				[ReadOnly] in RegionTexture.OwningRegion owningRegion,
 				[EntityInQueryIndex] int queryIndex
 			)

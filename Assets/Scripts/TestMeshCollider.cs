@@ -6,11 +6,11 @@ using UnityEngine;
 public class TestMeshCollider : MonoBehaviour
 {
 	[SerializeField]
-	MeshCollider collider;
+	MeshCollider meshCollider;
 
 	private void Start()
 	{
-		collider = GetComponent<MeshCollider>();
+        meshCollider = GetComponent<MeshCollider>();
 
 		Mesh mesh = new Mesh();
 		mesh.vertices = new Vector3[]
@@ -23,6 +23,6 @@ public class TestMeshCollider : MonoBehaviour
 			2, 1, 0, 1, 2, 3
 		};
 
-		collider.sharedMesh = mesh;
+        meshCollider.sharedMesh = mesh;
 	}
 }
