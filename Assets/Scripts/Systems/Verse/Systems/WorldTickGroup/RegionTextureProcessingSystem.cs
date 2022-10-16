@@ -21,6 +21,12 @@ namespace Verse
 		private Color32 emptyColor;
 		private Pixel emptyColorBurst;
 
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+			RequireForUpdate<Space.Tag>();
+		}
+
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
@@ -34,7 +40,6 @@ namespace Verse
 			emptyColorBurst = new(emptyColor.r, emptyColor.g, emptyColor.b, emptyColor.a);
 
 			EntityQuery textureInitializationQuery = GetEntityQuery(
-				ComponentType.ReadWrite<LocalToWorldTransform>(),
 				ComponentType.ReadOnly<SpriteRenderer>()
 			);
 			new CreateEmptyTextureJob
@@ -127,7 +132,7 @@ namespace Verse
 			[ReadOnly]
 			public Color32 emptyColor;
 
-			public void Execute(in SpriteRenderer renderer, ref LocalToWorldTransform transform)
+			public void Execute(in SpriteRenderer renderer)
 			{
 				int regionSize = Space.regionSize;
 				renderer.sprite = Sprite.Create(

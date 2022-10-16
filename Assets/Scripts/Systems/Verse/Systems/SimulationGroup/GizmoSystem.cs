@@ -32,6 +32,8 @@ namespace Verse
 		{
 			base.OnStartRunning();
 
+			RequireForUpdate<Space.Tag>();
+
 			tickDuration = 1f / GetSingleton<TickerSettings>().ticksPerSecond;
 		}
 

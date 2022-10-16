@@ -17,6 +17,10 @@ namespace Verse
 		{
 			base.OnCreate();
 
+			RequireForUpdate<Space.Tag>();
+			RequireForUpdate<Sandbox.Painting.Brush>();
+			RequireForUpdate<Sandbox.Painting.Matter>();
+
 			Actions.Sandbox.BrushSize.performed += (ctx) => InputBrushSize(ctx.ReadValue<float>());
 
 			atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>();

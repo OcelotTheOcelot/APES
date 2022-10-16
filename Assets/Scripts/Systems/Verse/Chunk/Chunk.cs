@@ -21,7 +21,7 @@ namespace Verse
 
 		public struct SpatialIndex : IComponentData
 		{
-			public Coord origin;
+            public Coord origin;
 
 			public SpatialIndex(Verse.Region.SpatialIndex regionIndex, RegionalIndex index)
 			{

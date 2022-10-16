@@ -10,7 +10,6 @@ namespace Verse
 	public partial class SpaceInitializationSystem : SystemBase
 	{
 		private const float defaultPixelsPerMeter = 100f;
-
 		// Guess this definition has to be relocated somewhere else
 		private EntityArchetype chunkArchetype;
 
@@ -19,6 +18,8 @@ namespace Verse
 		protected override void OnCreate()
 		{
 			base.OnCreate();
+
+			RequireForUpdate<Space.Tag>();
 
 			chunkArchetype = EntityManager.CreateArchetype(
 				ComponentType.ReadWrite<Chunk.Region>(),
@@ -53,20 +54,27 @@ namespace Verse
 			Entity region = EntityManager.Instantiate(Prefabs.Region);
 
 			DynamicBuffer<Space.RegionBufferElement> regions = EntityManager.GetBuffer<Space.RegionBufferElement>(space);
-			// GetBufferLookup<Space.RegionBufferElement>()[SpaceEntity];
 
-			Region.SpatialIndex spatialIndex = new(regionPos);
-			EntityManager.SetComponentData(region, spatialIndex);
+			Region.SpatialIndex regionSpatialIndex = new(regionPos);
+			EntityManager.SetComponentData(region, regionSpatialIndex);
 
 			InsertRegion(regions, region, regionPos);
 
-			float2 positionOffset = regionPos * Space.regionSize;
-			positionOffset *= Space.metersPerCell;
+			float2 regionWorldPos = regionSpatialIndex.origin * Space.metersPerCell;
 
-			LocalToWorldTransform transform = EntityManager.GetComponentData<LocalToWorldTransform>(region);
-			transform.Value.Position += new float3(positionOffset.x, positionOffset.y, 0f);
-			transform.Value.Scale *= defaultPixelsPerMeter * Space.metersPerCell;
-			EntityManager.SetComponentData(region, transform);
+			LocalToWorldTransform regionTransform = EntityManager.GetComponentData<LocalToWorldTransform>(region);
+			regionTransform.Value.Position += new float3(regionWorldPos, 0f);
+			regionTransform.Value.Scale *= defaultPixelsPerMeter * Space.metersPerCell;
+			EntityManager.SetComponentData(region, regionTransform);
+			/* LocalToWorld regionTransform = EntityManager.GetComponentData<LocalToWorld>(region);
+				regionTransform.Value = float4x4.TRS(
+					regionTransform.Position + new float3(regionWorldPos, 0f),
+					regionTransform.Rotation,
+					new float3(defaultPixelsPerMeter * Space.metersPerCell)
+				);
+			*/
+
+			EntityManager.SetComponentData(region, regionTransform);
 
 			EntityManager.SetSharedComponentManaged(region,
 				new Region.Processing
@@ -78,20 +86,31 @@ namespace Verse
 			foreach (Coord regionalPos in Enumerators.GetSquare(Space.chunksPerRegion))
 			{
 				Entity chunk = EntityManager.Instantiate(Prefabs.Chunk);
-				// Entity chunk = EntityManager.CreateEntity(chunkArchetype);
 
 				newChunks[chunkCount++] = chunk;
 
 				EntityManager.SetComponentData(chunk, new Chunk.Region() { region = region });
 
-				bool hasComp = EntityManager.HasComponent<MeshCollider>(chunk);
-				var polCol2d = EntityManager.GetComponentObject<MeshCollider>(chunk);
-				Debug.Log($"Collider: {hasComp}; {polCol2d != null}");
-
 				Chunk.RegionalIndex regionalIndex = new(regionalPos);
-
 				EntityManager.SetComponentData(chunk, regionalIndex);
-				EntityManager.SetComponentData(chunk, new Chunk.SpatialIndex(spatialIndex, regionalIndex));
+
+				Chunk.SpatialIndex spatialIndex = new(regionSpatialIndex, regionalIndex);
+				EntityManager.SetComponentData(chunk, spatialIndex);
+
+				float2 chunkWorldPos = spatialIndex.origin * Space.metersPerCell;
+
+				LocalToWorldTransform chunkTransform = EntityManager.GetComponentData<LocalToWorldTransform>(chunk);
+				chunkTransform.Value.Position += new float3(chunkWorldPos, 0f);
+				/*
+				LocalToWorld chunkTransform = new()
+				{
+					Value = float4x4.TRS(
+						new float3(chunkWorldPos, 0f),
+						Quaternion.identity,
+						new float3(1f)
+					)
+				};*/
+				EntityManager.SetComponentData(chunk, chunkTransform);
 
 				EntityManager.SetSharedComponentManaged(chunk, new Chunk.ProcessingBatchIndex(regionalPos));
 
@@ -215,6 +234,19 @@ namespace Verse
 				thisNeighbourhood.SouthWest = southWesternChunk;
 				southWesternNeighbourhood.NorthEast = thisChunk;
 				EntityManager.SetComponentData(southWesternChunk, southWesternNeighbourhood);
+			}
+
+			if (Space.GetRegionByIndex(EntityManager, space, regionPos + Coord.southEast, out Entity southEasternRegion))
+			{
+				Entity thisChunk = newChunks[Space.chunksPerRegion - 1];
+				Chunk.Neighbourhood thisNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(thisChunk);
+
+				Entity southEasternChunk = Region.GetChunkByIndexNonSafe(EntityManager, southEasternRegion, newChunks.Length - Space.chunksPerRegion);
+				Chunk.Neighbourhood southEasternNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(southEasternChunk);
+
+				thisNeighbourhood.SouthEast = southEasternChunk;
+				southEasternNeighbourhood.NorthWest= thisChunk;
+				EntityManager.SetComponentData(southEasternChunk, southEasternNeighbourhood);
 				EntityManager.SetComponentData(thisChunk, thisNeighbourhood);
 			}
 		}

@@ -9,6 +9,13 @@ namespace Verse
 {
 	public partial class TickerSystemGroup : ComponentSystemGroup
 	{
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+			RequireForUpdate<TickerSettings>();
+		}
+
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
@@ -157,6 +164,8 @@ namespace Verse
 		{
 			base.OnCreate();
 
+			RequireForUpdate<Space.Tag>();
+			
 			group = World.GetExistingSystemManaged<WorldTickSystemGroup>();
 		}
 

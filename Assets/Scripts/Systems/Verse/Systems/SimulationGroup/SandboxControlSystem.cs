@@ -25,6 +25,8 @@ namespace Verse
 		{
 			base.OnCreate();
 
+			RequireForUpdate<Sandbox.Controls>();
+
 			zoomDifference = CameraController.maxOrthographicSize - CameraController.minOrthographicSize;
 		}
 
@@ -40,7 +42,7 @@ namespace Verse
 			cameraZoomSmoothing = controls.cameraZoomSmoothing;
 			cameraMoveSpeedZoomCorrection = controls.cameraMoveSpeedZoomCorrection;
 
-			Coord regionCount = GetSingleton<Space.Initialization>().regionCount;
+			Coord regionCount = GetSingleton<Space.Bounds>().spaceGridBounds.Size;
 
 			CameraController.Instance.transform.position = Space.regionSize * .5f * (Vector2)(regionCount * Space.metersPerCell);
 		}

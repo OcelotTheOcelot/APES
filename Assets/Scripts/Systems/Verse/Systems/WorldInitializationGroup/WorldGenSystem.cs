@@ -21,6 +21,8 @@ namespace Verse.WorldGen
 		{
 			base.OnCreate();
 
+			RequireForUpdate<TerrainGenerationData>();
+
 			regionQuery = GetEntityQuery(
 				ComponentType.ReadOnly<Region.SpatialIndex>(),
 				ComponentType.ReadOnly<Region.Processing>()

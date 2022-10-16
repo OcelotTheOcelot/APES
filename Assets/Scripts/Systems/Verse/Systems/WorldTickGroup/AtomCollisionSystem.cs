@@ -9,6 +9,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Verse
 {
@@ -22,13 +23,15 @@ namespace Verse
 		private NativeArray<bool> solidityMap;
 		private NativeArray<byte> contouringCells;
 
-		private NativeArray<float2> outputPoints;
+		private ContourData outputData;
 
 		protected override void OnCreate()
 		{
 			base.OnCreate();
 
-			calculationQuery = GetEntityQuery(
+            RequireForUpdate<Space.Tag>();
+
+            calculationQuery = GetEntityQuery(
 				ComponentType.ReadWrite<Chunk.DirtyArea>(),
 				ComponentType.ReadOnly<Chunk.ColliderStatus>()
 			);
@@ -38,7 +41,11 @@ namespace Verse
 				ComponentType.ReadWrite<Chunk.ColliderStatus>()
 			);
 
-			outputPoints = new NativeArray<float2>(Space.chunkSize * Space.chunkSize, Allocator.Persistent);
+			outputData = new ContourData()
+			{
+				segments = new NativeArray<Segment>((int)Mathf.Pow(Space.chunkSize - 1, 2) * 4, Allocator.Persistent),
+				finalSegmentIndexes = new NativeList<int>((int)Mathf.Pow(Space.chunkSize / 2, 2), Allocator.Persistent)
+			};
 			solidityMap = new NativeArray<bool>(Space.chunkSize * Space.chunkSize, Allocator.Persistent);
 
 			int contouringCellsLength = Space.chunkSize - 1;
@@ -52,14 +59,15 @@ namespace Verse
 
 			/// TESTING SECTION
 			
-			Debug.Log($"Running marching squares test");
-			const int mapWidth = 4;
+			const int mapWidth = 6;
 			NativeArray<bool> _solidityMap = new(new bool[mapWidth * mapWidth]
 			{
-				true,	true,	true,	true,
-				true,	false,	false,	true,
-				true,	false,	false,	true,
-				true,	true,	true,	true
+				false,  true,	true,	false,  true,   false,
+				false,  false,  true,   false,  true,   true,
+				false,  true,   false,	false,  true,   false,
+				true,   true,   true,   true,   false,  false,
+				false,  false,  false,  false,  true,   true,
+				true,   false,  true,   true,   false,  false,
 			}, Allocator.Persistent);
 
 			NativeArray<byte> _contouringCells = new((mapWidth - 1) * (mapWidth - 1), Allocator.Persistent);
@@ -79,44 +87,38 @@ namespace Verse
 			for (int i = mapWidth - 2; i >= 0; i--)
 			{
 				for (int j = 0; j < mapWidth - 1; j++)
-					_contouringString += Convert.ToString(_contouringCells[i * (mapWidth - 1) + j], 2).PadLeft(4, '0') + " ";
+					_contouringString += Convert.ToString(_contouringCells[i * (mapWidth - 1) + j], 2).PadLeft(4, '0') + "\t";
 				_contouringString += '\n';
 			}
 			Debug.Log(_contouringString);
 
-			NativeArray<float2> _points = new NativeArray<float2>(_contouringCells.Length, Allocator.Persistent);
-			Contour[] _contours = new Contour[]
+			ContourData _contourData = new()
 			{
-				new Contour(),
-				new Contour(new float2(.5f, 0f), new float2(1f, .5f)),
-				new Contour(new float2(0f, .5f), new float2(.5f, 0f)),
-				new Contour(new float2(0f, .5f), new float2(1f, .5f)),
-				new Contour(new float2(.5f, 1f), new float2(1f, .5f)),
-				new Contour(new float2(.5f, 1f), new float2(.5f, 0f)),
-				new Contour(new float2(0f, .5f), new float2(.5f, 1f), new float2(.5f, 0f), new float2(1f, .5f)),
-                new Contour(new float2(0f, .5f), new float2(1f, .5f)),
+				segments = new NativeArray<Segment>((int)Mathf.Pow(mapWidth - 1, 2) * 4, Allocator.Persistent),
+				finalSegmentIndexes = new NativeList<int>((int)Mathf.Pow(mapWidth / 2, 2), Allocator.Persistent)
+			};
 
-                new Contour(new float2(0f, .5f), new float2(.5f, 1f)),
-				new Contour(new float2(0f, .5f), new float2(.5f, 0f), new float2(.5f, 1f), new float2(1f, .5f)),
-                new Contour(new float2(.5f, 1f), new float2(1f, .5f)),
-                new Contour(new float2(0f, .5f), new float2(1f, .5f)),
-                new Contour(new float2(0f, .5f), new float2(.5f, 0f)),
-                new Contour(new float2(.5f, 0f), new float2(1f, .5f)),
-				new Contour()
-            };
+			/// END OF TESTING SECTION
+		}
 
-
-
-            /// END OF TESTING SECTION
-        }
-
-		private struct Contour
+		public struct Segment
 		{
-			public float2[] points;
+			public float2 from;
+			public float2 to;
 
-			public Contour(float2 p1) { points = new[] { p1 }; }
-			public Contour(float2 p1, float2 p2) { points = new[] { p1, p2 }; }
-			public Contour(float2 p1, float2 p2, float2 p3, float2 p4) { points = new[] { p1, p2, p3, p4 }; }
+			public void Get3d(out Vector3 from, out Vector3 to)
+			{
+				from = (Vector2)this.from;
+				to = (Vector2)this.to;
+			}
+
+			public Segment(float2 from, float2 to) { this.from = from; this.to = to; }
+		}
+
+		public struct ContourData
+		{
+			public NativeArray<Segment> segments;
+			public NativeList<int> finalSegmentIndexes;
 		}
 
 		private byte GetContouring(bool sw, bool se, bool nw, bool ne)
@@ -144,10 +146,9 @@ namespace Verse
 
 			var calculationJobHandle = new CalculateChunkColliderPointsJob
 			{
-				ecb = commandBuffer,
 				matters = matters,
 				states = states,
-				outputPoints = outputPoints,
+				outputData = outputData,
 				solidityMap = solidityMap,
 				contouringCells = contouringCells
 			}.Schedule(calculationQuery, Dependency);
@@ -155,7 +156,7 @@ namespace Verse
 
 			new RebuildChunkColliderJob
 			{
-				points = outputPoints
+				contourData = outputData
 			}.Run(rebuildingQuery);
 		}
 
@@ -171,11 +172,10 @@ namespace Verse
 			public Matter.State colliderState;
 
 			[WriteOnly]
-			public NativeArray<float2> outputPoints;
+			public ContourData outputData;
 
 			public NativeArray<bool> solidityMap;
 			public NativeArray<byte> contouringCells;
-			public EntityCommandBuffer ecb;
 
 			public void Execute(
 				DynamicBuffer<Chunk.AtomBufferElement> atoms,
@@ -215,6 +215,15 @@ namespace Verse
 					}
 					rowShift += Space.chunkSize;
 				}
+
+				outputData.segments[0] = new Segment(new float2(64 * Space.metersPerCell, 64 * Space.metersPerCell), new float2(0, 64 * Space.metersPerCell));
+				outputData.segments[1] = new Segment(new float2(0, 64 * Space.metersPerCell), new float2(0, 0));
+				outputData.segments[2] = new Segment(new float2(0, 0), new float2(64 * Space.metersPerCell, 0));
+				outputData.segments[3] = new Segment(new float2(64 * Space.metersPerCell, 0), new float2(64 * Space.metersPerCell, 64 * Space.metersPerCell));
+				outputData.finalSegmentIndexes.Length = 1;
+				outputData.finalSegmentIndexes[0] = 3;
+
+				// Ramer–Douglas–Peucker
 			}
 
 			private byte GetContouring(bool sw, bool se, bool nw, bool ne)
@@ -229,7 +238,6 @@ namespace Verse
 					contour |= 0b1000;
 				if (ne)
 					contour |= 0b0100;
-
 				return contour;
 			}
 		}
@@ -237,7 +245,7 @@ namespace Verse
 		public partial struct RebuildChunkColliderJob : IJobEntity
 		{
 			[ReadOnly]
-			public NativeArray<float2> points;
+			public ContourData contourData;
 
 			public void Execute(
 				in MeshCollider collider,
@@ -246,10 +254,6 @@ namespace Verse
 			{
 				if (!colliderStatus.pendingRebuild)
 					return;
-
-				Vector2[] pointArray = new Vector2[points.Length];
-				for (int i = 0; i < points.Length; i++)
-					pointArray[i] = points[i];
 
 				if (collider == null)
 					Debug.LogWarning("Warning: null chunk collider!");
@@ -263,11 +267,64 @@ namespace Verse
 					//		new Vector2(Space.chunkSize, 0)
 					//	}
 					//);
-					
+
 					// collider.SetPath(0, pointArray);
+
+					// collider.sharedMesh = PolygonsToMesh(contourData);
+
+					Debug.Log($"Vertices: {String.Join(", ", collider.sharedMesh.vertices.Select(vec => vec.ToString()))}");
 				}
 
 				colliderStatus.pendingRebuild = false;
+			}
+
+			private Mesh PolygonsToMesh(ContourData data)
+			{
+				Mesh mesh = new();
+
+				int segmentCount = data.finalSegmentIndexes[^1] + 1;
+
+				Vector3[] vertices = new Vector3[segmentCount * 4];  // When ordered, should use 2 + N*2;
+				int[] triangles = new int[segmentCount * 2 * 3];
+
+				const float depth = .5f;
+
+				int islandIndex = 0;
+				int currentFinalIndex = data.finalSegmentIndexes[islandIndex];
+
+				int verticeIndex = 0;
+				int triangleIndex = 0;
+				for (int i = 0; i < segmentCount; i++)
+				{
+
+					Segment segment = data.segments[i];
+					segment.Get3d(out Vector3 from, out Vector3 to);
+
+					vertices[verticeIndex] = from;
+					vertices[verticeIndex + 1] = to;
+					from.z += depth;
+					to.z += depth;
+					vertices[verticeIndex + 2] = from;
+					vertices[verticeIndex + 3] = to;
+
+					triangles[triangleIndex++] = verticeIndex + 2;
+					triangles[triangleIndex++] = verticeIndex + 1;
+					triangles[triangleIndex++] = verticeIndex;
+
+					triangles[triangleIndex++] = verticeIndex + 2;
+					triangles[triangleIndex++] = verticeIndex + 3;
+					triangles[triangleIndex++] = verticeIndex + 1;
+
+					verticeIndex += 4;
+
+					if (i == currentFinalIndex && i + 1 < segmentCount)
+						currentFinalIndex = data.finalSegmentIndexes[++islandIndex];
+				}
+
+				mesh.vertices = vertices;
+				mesh.triangles = triangles;
+
+				return mesh;
 			}
 		}
 	}

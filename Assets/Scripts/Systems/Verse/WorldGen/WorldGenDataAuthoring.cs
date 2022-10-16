@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Collections;
 using UnityEngine;
 
-namespace Verse
+namespace Verse.WorldGen
 {
 	public class WorldGenDataAuthoring : MonoBehaviour
 	{

@@ -1,6 +1,5 @@
 using Unity.Entities;
 
-using static Verse.Chunk;
 using static Verse.Atom;
 
 namespace Verse
@@ -9,6 +8,14 @@ namespace Verse
 	[UpdateBefore(typeof(SpaceInitializationSystemGroup))]
 	public partial class VerseInitializationSystem : SystemBase
 	{
+		protected override void OnCreate()
+		{
+			base.OnCreate();
+
+            RequireForUpdate<Prefabs.RegionPrefab>();
+            RequireForUpdate<Prefabs.ChunkPrefab>();
+        }
+
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();

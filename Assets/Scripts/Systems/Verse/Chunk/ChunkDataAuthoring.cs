@@ -7,9 +7,6 @@ namespace Verse
 {
 	public class ChunkDataAuthoring : MonoBehaviour
 	{
-		[SerializeField]
-		private MeshCollider chunkCollider;
-
 		public class Baker : Baker<ChunkDataAuthoring>
 		{
 			public override void Bake(ChunkDataAuthoring authoring)
@@ -25,9 +22,6 @@ namespace Verse
 				AddComponent(new DirtyArea());
 
 				AddComponent(new ColliderStatus());
-				AddComponentObject(authoring.chunkCollider);
-
-				//var c = Unity.Phys
 			}
 		}
 	}
