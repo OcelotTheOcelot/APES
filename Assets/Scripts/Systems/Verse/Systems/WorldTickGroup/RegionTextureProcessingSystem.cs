@@ -1,13 +1,10 @@
 using Unity.Entities;
 using Unity.Collections;
-using Unity.Mathematics;
-using Unity.Transforms;
 using System.Linq;
 using UnityEngine;
 using Unity.Burst;
 using System.Runtime.InteropServices;
 using Unity.Jobs;
-using System;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace Verse
@@ -17,10 +14,9 @@ namespace Verse
 	public partial class RegionTextureProcessingSystem : SystemBase
 	{
 		private readonly static Pixel deferredColor = new(255, 0, 255, 255);
-
-		private NativeArray<Pixel> sliceHolder;
-
-        private EntityQuery textureQuery;
+		
+		private EntityQuery textureQuery;
+		private UnsafeList<NativeArray<Pixel>> pixelData;
 
 		private Color32 emptyColor;
 		private Pixel emptyColorBurst;
@@ -30,8 +26,8 @@ namespace Verse
 			base.OnCreate();
 			RequireForUpdate<Space.Tag>();
 
-			sliceHolder = new(Space.totalCellsInRegion, Allocator.Persistent);
-        }
+			pixelData = new(1, Allocator.Persistent);
+		}
 
 		protected override void OnStartRunning()
 		{
@@ -53,10 +49,14 @@ namespace Verse
 
 		protected override void OnUpdate()
 		{
-			int regionsToUpdate = textureQuery.CalculateEntityCount();
-			NativeArray<Pixel> pixelData = new(regionsToUpdate * Space.totalCellsInRegion, Allocator.Persistent);
+			// For consistent indexing, it's important that we use the ame query (I guess)
+			int regionsAmount = textureQuery.CalculateEntityCount();
+			pixelData.Length = regionsAmount;
 
-			new GetPixelDataJob { outputData = pixelData }.Run(textureQuery);
+			new GetPixelDataJob
+			{
+				outputData = pixelData
+			}.Run(textureQuery);
 			new RebuildChunkTextureJob
 			{
 				emptyColor = emptyColorBurst,
@@ -67,42 +67,36 @@ namespace Verse
 				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(isReadOnly: true),
 
 				pixelData = pixelData
-			}.Run(textureQuery);
+			}.Schedule(textureQuery, Dependency).Complete();
 			new LoadPixelDataJob
 			{
-				inputData = pixelData,
-                sliceHolder = sliceHolder
-            }.Run(textureQuery);
+				inputData = pixelData
+			}.Run(textureQuery);
 		}
 
 		private partial struct GetPixelDataJob : IJobEntity
 		{
-			public NativeArray<Pixel> outputData;
+			[WriteOnly]
+			public UnsafeList<NativeArray<Pixel>> outputData;
 
-            public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int regionIndex)
+			public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
 			{
 				Texture2D texture = renderer.sprite.texture;
 
-				NativeArray<Pixel> pixels = texture.GetRawTextureData<Pixel>();
-
-				int firstIndex = regionIndex * Space.totalCellsInRegion;
-				for (int i = 0; i < Space.totalCellsInRegion; i++)
-					outputData[firstIndex + i] = pixels[i];
-            }
+				outputData[queryIndex] = texture.GetRawTextureData<Pixel>();
+			}
 		}
 
 		private partial struct LoadPixelDataJob : IJobEntity
 		{
-			public NativeArray<Pixel> inputData;
-			public NativeArray<Pixel> sliceHolder;
+            [ReadOnly]
+            public UnsafeList<NativeArray<Pixel>> inputData;
 
-            public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int index)
+			public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
 			{
 				Texture2D texture = renderer.sprite.texture;
 
-				inputData.Slice(index * Space.totalCellsInRegion, Space.totalCellsInRegion).CopyTo(sliceHolder);
-
-                texture.LoadRawTextureData(sliceHolder);
+				texture.LoadRawTextureData(inputData[queryIndex]);
 				texture.Apply();
 			}
 		}
@@ -125,23 +119,21 @@ namespace Verse
 			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
 
 			[WriteOnly]
-			public NativeArray<Pixel> pixelData;
+			public UnsafeList<NativeArray<Pixel>> pixelData;
 
 			public void Execute(
 				[ReadOnly] in RegionTexture.OwningRegion owningRegion,
-				[EntityInQueryIndex] int index
+				[EntityInQueryIndex] int queryIndex
 			)
 			{
-				int queryOffset = index * Space.totalCellsInRegion;
+				NativeArray<Pixel> data = pixelData[queryIndex];
 
-                var chunks = chunkBuffers[owningRegion.region];
+				var chunks = chunkBuffers[owningRegion.region];
 				foreach (Entity chunk in chunks)
 				{
 					Chunk.DirtyArea dirtyArea = dirtyAreas[chunk];
 					if (!dirtyArea.active)
 						continue;
-
-					NativeArray<Pixel> data = pixelData;
 
 					Coord regionalOrigin = regionalIndexes[chunk].origin;
 					int regionalOriginOffset = regionalOrigin.y * Space.regionSize + regionalOrigin.x;
@@ -154,7 +146,7 @@ namespace Verse
 						for (int x = dirtyArea.from.x; x <= dirtyArea.to.x; x++)
 						{
 							int regionalAdditiveOffset = regionRowShift + x;
-							data[queryOffset + regionalOriginOffset + regionalAdditiveOffset] = GetColorOf(atoms[chunkRowShift + x]);
+							data[regionalOriginOffset + regionalAdditiveOffset] = GetColorOf(atoms[chunkRowShift + x]);
 						}
 						regionRowShift += Space.regionSize;
 					}
