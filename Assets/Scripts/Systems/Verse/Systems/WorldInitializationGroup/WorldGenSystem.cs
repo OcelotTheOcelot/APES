@@ -43,23 +43,23 @@ namespace Verse.WorldGen
 		protected override void OnUpdate()
 		{
 			EntityCommandBuffer commandBuffer = GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
-			//var handle = new GenerateRegionJob()
-			//{
-			//	terrainGenerationData = GetSingleton<TerrainGenerationData>(),
+			var handle = new GenerateRegionJob()
+			{
+				terrainGenerationData = GetSingleton<TerrainGenerationData>(),
 
-			//	dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
-			//	colliders = GetComponentLookup<Chunk.ColliderStatus>(),
+				dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
+				colliders = GetComponentLookup<Chunk.ColliderStatus>(),
 
-			//	regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
-			//	creationDatas = GetComponentLookup<Matter.Creation>(),
-			//	atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(),
-			//	matterColors = GetBufferLookup<Matter.ColorBufferElement>(),
-			//	noise = noise,
-			//	commandBuffer = commandBuffer
-			//}.Schedule(regionQuery, Dependency);
-			//handle.Complete();
+				regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
+				creationDatas = GetComponentLookup<Matter.Creation>(),
+				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(),
+				matterColors = GetBufferLookup<Matter.ColorBufferElement>(),
+				noise = noise,
+				commandBuffer = commandBuffer
+			}.Schedule(regionQuery, Dependency);
+			handle.Complete();
 
-			//endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(handle);
+			endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(handle);
 		}
 
 		public partial struct GenerateRegionJob : IJobEntity
@@ -119,7 +119,10 @@ namespace Verse.WorldGen
 
 				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
-			}
+
+                if (spaceCoord.y >= 512*3)
+                    CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
+            }
 
 			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord chunkCoord, Entity matter)
 			{
