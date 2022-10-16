@@ -29,15 +29,15 @@ namespace Verse
 		{
 			base.OnCreate();
 
-            RequireForUpdate<Space.Tag>();
+			RequireForUpdate<Space.Tag>();
 
-            calculationQuery = GetEntityQuery(
+			calculationQuery = GetEntityQuery(
 				ComponentType.ReadWrite<Chunk.DirtyArea>(),
 				ComponentType.ReadOnly<Chunk.ColliderStatus>()
 			);
 
 			rebuildingQuery = GetEntityQuery(
-				ComponentType.ReadOnly<MeshCollider>(),
+				//ComponentType.ReadOnly<MeshCollider>(),
 				ComponentType.ReadWrite<Chunk.ColliderStatus>()
 			);
 
@@ -248,32 +248,29 @@ namespace Verse
 			public ContourData contourData;
 
 			public void Execute(
-				in MeshCollider collider,
 				[WriteOnly] ref Chunk.ColliderStatus colliderStatus
 			)
 			{
 				if (!colliderStatus.pendingRebuild)
 					return;
 
-				if (collider == null)
-					Debug.LogWarning("Warning: null chunk collider!");
-				else
-				{
-					//collider.SetPath(0,
-					//	new Vector2[] {
-					//		new Vector2(0, 0),
-					//		new Vector2(0, Space.chunkSize),
-					//		new Vector2(Space.chunkSize, Space.chunkSize),
-					//		new Vector2(Space.chunkSize, 0)
-					//	}
-					//);
+				//if (collider == null)
+				//	Debug.LogWarning("Warning: null chunk collider!");
+				//else
+				//{
+				//	//collider.SetPath(0,
+				//	//	new Vector2[] {
+				//	//		new Vector2(0, 0),
+				//	//		new Vector2(0, Space.chunkSize),
+				//	//		new Vector2(Space.chunkSize, Space.chunkSize),
+				//	//		new Vector2(Space.chunkSize, 0)
+				//	//	}
+				//	//);
 
-					// collider.SetPath(0, pointArray);
+				//	// collider.SetPath(0, pointArray);
 
-					// collider.sharedMesh = PolygonsToMesh(contourData);
-
-					Debug.Log($"Vertices: {String.Join(", ", collider.sharedMesh.vertices.Select(vec => vec.ToString()))}");
-				}
+				//	// collider.sharedMesh = PolygonsToMesh(contourData);
+				//}
 
 				colliderStatus.pendingRebuild = false;
 			}

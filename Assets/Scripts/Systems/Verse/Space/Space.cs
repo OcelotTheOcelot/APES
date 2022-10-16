@@ -23,7 +23,10 @@ namespace Verse
 		public readonly static float cellsPerMeter = 20f;
 		public readonly static float metersPerCell = 1f / cellsPerMeter;
 
-		public struct Tag : IComponentData { }
+        public readonly static int totalCellsInChunk = chunkSize * chunkSize;
+        public readonly static int totalCellsInRegion = regionSize * regionSize;
+
+        public struct Tag : IComponentData { }
 
 		public struct Bounds : IComponentData
 		{

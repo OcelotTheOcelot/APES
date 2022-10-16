@@ -245,7 +245,7 @@ namespace Verse
 				Chunk.Neighbourhood southEasternNeighbourhood = EntityManager.GetComponentData<Chunk.Neighbourhood>(southEasternChunk);
 
 				thisNeighbourhood.SouthEast = southEasternChunk;
-				southEasternNeighbourhood.NorthWest= thisChunk;
+				southEasternNeighbourhood.NorthWest = thisChunk;
 				EntityManager.SetComponentData(southEasternChunk, southEasternNeighbourhood);
 				EntityManager.SetComponentData(thisChunk, thisNeighbourhood);
 			}
