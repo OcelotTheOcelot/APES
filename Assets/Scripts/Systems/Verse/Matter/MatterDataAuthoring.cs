@@ -45,7 +45,7 @@ namespace Verse
 				AddComponent(new Group { group = authoring.group });
 				AddComponent(new DisplayName { name = authoring.displayName });
 
-				AddComponent(new AtomState { state = authoring.state });
+				AddComponent(new AtomState { value = authoring.state });
 				AddComponent(new Creation { temperature = authoring.defaultTemperature });
 
 				AddComponent(new PhysicProperties { density = authoring.density });

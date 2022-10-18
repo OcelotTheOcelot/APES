@@ -46,7 +46,7 @@ namespace Verse
 				segments = new NativeArray<Segment>((int)Mathf.Pow(Space.chunkSize - 1, 2) * 4, Allocator.Persistent),
 				finalSegmentIndexes = new NativeList<int>((int)Mathf.Pow(Space.chunkSize / 2, 2), Allocator.Persistent)
 			};
-			solidityMap = new NativeArray<bool>(Space.chunkSize * Space.chunkSize, Allocator.Persistent);
+			solidityMap = new NativeArray<bool>(Space.totalCellsInChunk, Allocator.Persistent);
 
 			int contouringCellsLength = Space.chunkSize - 1;
 			contouringCellsLength *= contouringCellsLength;
@@ -192,9 +192,9 @@ namespace Verse
 					if (atom == Entity.Null)
 						continue;
 
-					Entity matter = matters[atom].matter;
+					Entity matter = matters[atom].value;
 
-					Matter.State state = states[matter].state;
+					Matter.State state = states[matter].value;
 
 					bool solid = state == colliderState;
 					solidityMap[i] = solid;

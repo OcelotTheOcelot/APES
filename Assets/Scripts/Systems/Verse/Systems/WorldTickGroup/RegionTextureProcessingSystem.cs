@@ -3,7 +3,6 @@ using Unity.Collections;
 using System.Linq;
 using UnityEngine;
 using Unity.Burst;
-using System.Runtime.InteropServices;
 using Unity.Jobs;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -13,13 +12,13 @@ namespace Verse
 	[UpdateBefore(typeof(AtomPhysicsSystem))]
 	public partial class RegionTextureProcessingSystem : SystemBase
 	{
-		private readonly static Pixel deferredColor = new(255, 0, 255, 255);
+		private readonly static AtomColor deferredColor = new(255, 0, 255, 255);
 		
 		private EntityQuery textureQuery;
-		private UnsafeList<NativeArray<Pixel>> pixelData;
+		private UnsafeList<NativeArray<AtomColor>> pixelData;
 
 		private Color32 emptyColor;
-		private Pixel emptyColorBurst;
+		private AtomColor emptyColorBurst;
 
 		protected override void OnCreate()
 		{
@@ -77,20 +76,20 @@ namespace Verse
 		private partial struct GetPixelDataJob : IJobEntity
 		{
 			[WriteOnly]
-			public UnsafeList<NativeArray<Pixel>> outputData;
+			public UnsafeList<NativeArray<AtomColor>> outputData;
 
 			public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
 			{
 				Texture2D texture = renderer.sprite.texture;
 
-				outputData[queryIndex] = texture.GetRawTextureData<Pixel>();
+				outputData[queryIndex] = texture.GetRawTextureData<AtomColor>();
 			}
 		}
 
 		private partial struct LoadPixelDataJob : IJobEntity
 		{
             [ReadOnly]
-            public UnsafeList<NativeArray<Pixel>> inputData;
+            public UnsafeList<NativeArray<AtomColor>> inputData;
 
 			public void Execute([ReadOnly] in SpriteRenderer renderer, [EntityInQueryIndex] int queryIndex)
 			{
@@ -105,7 +104,7 @@ namespace Verse
 		private partial struct RebuildChunkTextureJob : IJobEntity
 		{
 			[ReadOnly]
-			public Pixel emptyColor;
+			public AtomColor emptyColor;
 
 			[ReadOnly]
 			public ComponentLookup<Atom.Color> atomColors;
@@ -119,14 +118,14 @@ namespace Verse
 			public BufferLookup<Chunk.AtomBufferElement> atomBuffers;
 
 			[WriteOnly]
-			public UnsafeList<NativeArray<Pixel>> pixelData;
+			public UnsafeList<NativeArray<AtomColor>> pixelData;
 
 			public void Execute(
 				[ReadOnly] in RegionTexture.OwningRegion owningRegion,
 				[EntityInQueryIndex] int queryIndex
 			)
 			{
-				NativeArray<Pixel> data = pixelData[queryIndex];
+				NativeArray<AtomColor> data = pixelData[queryIndex];
 
 				var chunks = chunkBuffers[owningRegion.region];
 				foreach (Entity chunk in chunks)
@@ -139,11 +138,11 @@ namespace Verse
 					int regionalOriginOffset = regionalOrigin.y * Space.regionSize + regionalOrigin.x;
 
 					var atoms = atomBuffers[chunk];
-					int chunkHeight = dirtyArea.to.y * Space.chunkSize;
-					int regionRowShift = dirtyArea.from.y * Space.regionSize;
-					for (int chunkRowShift = dirtyArea.from.y * Space.chunkSize; chunkRowShift <= chunkHeight; chunkRowShift += Space.chunkSize)
+					int chunkHeight = dirtyArea.To.y * Space.chunkSize;
+					int regionRowShift = dirtyArea.From.y * Space.regionSize;
+					for (int chunkRowShift = dirtyArea.From.y * Space.chunkSize; chunkRowShift <= chunkHeight; chunkRowShift += Space.chunkSize)
 					{
-						for (int x = dirtyArea.from.x; x <= dirtyArea.to.x; x++)
+						for (int x = dirtyArea.From.x; x <= dirtyArea.To.x; x++)
 						{
 							int regionalAdditiveOffset = regionRowShift + x;
 							data[regionalOriginOffset + regionalAdditiveOffset] = GetColorOf(atoms[chunkRowShift + x]);
@@ -153,7 +152,7 @@ namespace Verse
 				}
 			}
 
-			private Pixel GetColorOf(Entity atom)
+			private AtomColor GetColorOf(Entity atom)
 			{
 				if (atom == Entity.Null)
 					return emptyColor;
@@ -161,7 +160,7 @@ namespace Verse
 				if (atom.Index < 0)
 					return deferredColor;
 
-				return atomColors[atom].color;
+				return atomColors[atom].value;
 			}
 		}
 
@@ -193,38 +192,6 @@ namespace Verse
 			texture.Apply();
 
 			return texture;
-		}
-
-		[StructLayout(LayoutKind.Explicit)]
-		public struct Pixel
-		{
-			[FieldOffset(0)]
-			public int rgba;
-
-			[FieldOffset(0)]
-			public byte r;
-
-			[FieldOffset(1)]
-			public byte g;
-
-			[FieldOffset(2)]
-			public byte b;
-
-			[FieldOffset(3)]
-			public byte a;
-
-			public Pixel(byte red, byte green, byte blue, byte alpha)
-			{
-				rgba = 0;
-
-				r = red;
-				g = green;
-				b = blue;
-				a = alpha;
-			}
-
-			public static implicit operator Color32(Pixel pixel) => new(pixel.r, pixel.g, pixel.b, pixel.a);
-			public static implicit operator Pixel(Color32 color) => new(color.r, color.g, color.b, color.a);
 		}
 	}
 }

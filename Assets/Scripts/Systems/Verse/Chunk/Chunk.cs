@@ -70,10 +70,10 @@ namespace Verse
 		{
 			Entity atom = dstManager.CreateEntity(Archetypes.Atom);
 
-			dstManager.SetComponentData(atom, new Atom.Matter { matter = matterPrefab });
+			dstManager.SetComponentData(atom, new Atom.Matter { value = matterPrefab });
 
 			Matter.Creation creationData = dstManager.GetComponentData<Matter.Creation>(matterPrefab);
-			dstManager.SetComponentData(atom, new Atom.Temperature { temperature = creationData.temperature });
+			dstManager.SetComponentData(atom, new Atom.Temperature { value = creationData.temperature });
 
 			dstManager.SetComponentData<Atom.Color>(atom,
 				Utils.Pick(dstManager.GetBuffer<Matter.ColorBufferElement>(matterPrefab))

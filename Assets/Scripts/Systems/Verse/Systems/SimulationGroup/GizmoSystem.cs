@@ -53,11 +53,11 @@ namespace Verse
 			//	duration = tickDuration
 			//}.Run(chunkQuery);
 
-			new DrawNeighbourhoodGizmosJob
-			{
-				neighbourColor = new Color(.8f, 0f, 0f, 1f),
-				duration = tickDuration
-			}.Run(chunkQuery);
+			//new DrawNeighbourhoodGizmosJob
+			//{
+			//	neighbourColor = new Color(.8f, 0f, 0f, 1f),
+			//	duration = tickDuration
+			//}.Run(chunkQuery);
 		}
 
 		public partial struct DrawRegionGizmosJob : IJobEntity
@@ -120,7 +120,7 @@ namespace Verse
 				Vector2 size = area.Size + Coord.one - margin * 2;
 				size *= metersPerCell;
 
-				Vector2 cornerA = (index.origin + area.from + margin) * metersPerCell;
+				Vector2 cornerA = (index.origin + area.From + margin) * metersPerCell;
 				Vector2 cornerB = cornerA + new Vector2(size.x, 0);
 				Vector2 cornerC = cornerA + new Vector2(0, size.y);
 				Vector2 cornerD = cornerA + size;

@@ -154,7 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultBrushSize: 2
   controls:
-    cameraPanningSpeed: 10
+    cameraPanningSpeed: 0.1
     cameraMoveSpeed: 10
     cameraZoomSpeed: 10
     cameraZoomSmoothing: 5

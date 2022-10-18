@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
 using static Verse.Chunk;
+using System.Runtime.CompilerServices;
 
 namespace Verse
 {
@@ -12,6 +13,7 @@ namespace Verse
 		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, int chunkCoordX, int chunkCoordY, Entity atom) => atoms[chunkCoordY * Space.chunkSize + chunkCoordX] = atom;
 		public static void SetAtom(this DynamicBuffer<AtomBufferElement> atoms, Coord chunkCoord, Entity atom) => atoms.SetAtom(chunkCoord.x, chunkCoord.y, atom);
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool GetAtomNeighbourFallback(
 			this DynamicBuffer<AtomBufferElement> atoms,
 			BufferLookup<AtomBufferElement> atomBuffers,
@@ -85,6 +87,7 @@ namespace Verse
 			return true;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static bool SafeGetAtomFromPotentialChunk(
 			BufferLookup<AtomBufferElement> atomBuffers,
 			Entity chunk,
@@ -124,5 +127,7 @@ namespace Verse
 			atomsA.SetAtom(coordA, atomsB.GetAtom(coordB));
 			atomsB.SetAtom(coordB, atom);
 		}
+
+		//public static void 
 	}
 }

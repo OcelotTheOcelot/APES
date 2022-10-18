@@ -93,6 +93,12 @@ namespace Verse
 
 		public CoordRect GetShifted(int shiftX, int shiftY) => new(xMin + shiftX, yMin + shiftY, xMax + shiftX, yMax + shiftY);
 
+        public void StretchCombineWith(CoordRect otherRect)
+        {
+            min = Coord.Min(min, otherRect.min);
+            max = Coord.Max(max, otherRect.max);
+        }
+
         public bool IntersectWith(CoordRect otherRect)
 		{
 			if (xMax < otherRect.xMin || xMin > otherRect.xMax || yMin > otherRect.yMax || yMax < otherRect.yMin)

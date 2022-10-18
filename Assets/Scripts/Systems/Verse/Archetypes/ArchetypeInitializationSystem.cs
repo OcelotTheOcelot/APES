@@ -29,7 +29,8 @@ namespace Verse
 				atom: EntityManager.CreateArchetype(
 					ComponentType.ReadWrite<Atom.Matter>(),
 					ComponentType.ReadWrite<Color>(),
-					ComponentType.ReadWrite<Temperature>()
+					ComponentType.ReadWrite<Temperature>(),
+					ComponentType.ReadWrite<Velocity>()
 				)
 			);
 

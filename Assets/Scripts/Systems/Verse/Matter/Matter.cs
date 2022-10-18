@@ -10,7 +10,7 @@ namespace Verse
 			dstManager.GetComponentData<PhysicProperties>(matter);
 
 		public static State GetState(EntityManager dstManager, Entity matter) =>
-			dstManager.GetComponentData<AtomState>(matter).state;
+			dstManager.GetComponentData<AtomState>(matter).value;
 
 
 		public struct Id : IComponentData
@@ -25,12 +25,12 @@ namespace Verse
 			public static implicit operator Color(ColorBufferElement matterColor) => matterColor.color;
 			public static implicit operator ColorBufferElement(Color color) => new() { color = color };
 
-			public static implicit operator Atom.Color(ColorBufferElement matterColor) => new() { color = matterColor.color };
+			public static implicit operator Atom.Color(ColorBufferElement matterColor) => new() { value = matterColor.color };
 		}
 
 		public struct AtomState : IComponentData
 		{
-			public State state;
+			public State value;
 		}
 
 		public struct Creation : IComponentData

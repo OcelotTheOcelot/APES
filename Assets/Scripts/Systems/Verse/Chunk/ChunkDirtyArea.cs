@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Verse
@@ -11,10 +12,17 @@ namespace Verse
 			public bool active;
 			public CoordRect rect;
 
-			public Coord from => rect.min;
-			public Coord to => rect.max;
+			public Coord From => rect.min;
+			public Coord To => rect.max;
 
 			private static readonly Coord maxSize = new(Space.chunkSize - 1, Space.chunkSize - 1);
+
+			public DirtyArea(CoordRect chunkRect)
+			{
+				active = chunkRect.IntersectWith(Space.chunkBounds);
+				rect = chunkRect;
+			}
+
 			public Coord Size => rect.Size;
 			public int Area => rect.Area;
 
@@ -32,8 +40,8 @@ namespace Verse
 				}
 
 				rect.Set(
-					Coord.Min(from, chunkCoord),
-					Coord.Max(to, chunkCoord)
+					Coord.Min(From, chunkCoord),
+					Coord.Max(To, chunkCoord)
 				);
 			}
 
@@ -41,16 +49,16 @@ namespace Verse
 			{
 				if (!active)
 				{
-					from.Set(x, y);
-					to.Set(x, y);
+                    rect.min.Set(x, y);
+                    rect.max.Set(x, y);
 
 					active = true;
 
 					return;
 				}
-
-				from.Set(Mathf.Min(from.x, x), Mathf.Min(from.y, y));
-				to.Set(Mathf.Max(to.x, x), Mathf.Max(to.y, y));
+                
+                rect.min.Set(math.min(rect.min.x, x), math.min(rect.min.y, y));
+                rect.max.Set(math.max(rect.max.x, x), math.max(rect.max.y, y));
 			}
 
 			public void MarkDirty()
@@ -72,11 +80,18 @@ namespace Verse
 					return;
 				}
 
-				rect.min = Coord.Min(rect.min, chunkRect.min);
-				rect.max = Coord.Max(rect.max, chunkRect.max);
+				rect.StretchCombineWith(chunkRect);
 			}
 
 			public override string ToString() => active ? $"{rect}" : "[empty]";
+		}
+
+		public struct ScheduledDirtyRect : IComponentData
+		{
+			public bool active;
+			public CoordRect rect;
+
+			public static implicit operator CoordRect(ScheduledDirtyRect rect) => rect.rect;
 		}
 
 		public static void MarkDirty(EntityManager dstManager, Entity chunk, CoordRect rect, bool safe = true)
@@ -91,13 +106,6 @@ namespace Verse
 			DirtyArea area = dstManager.GetComponentData<DirtyArea>(chunk);
 			area.MarkDirty();
 			dstManager.SetComponentData(chunk, area);
-		}
-
-		public static void MarkDirtyNeighbourFallback(EntityManager dstManager, Entity chunk, Neighbourhood neighbours, CoordRect dirtyRect)
-		{
-			MarkDirty(dstManager, chunk, dirtyRect, safe: true);
-
-			throw new System.NotImplementedException();
 		}
 	}
 }

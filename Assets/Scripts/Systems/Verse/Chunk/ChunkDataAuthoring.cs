@@ -20,6 +20,7 @@ namespace Verse
 
 				AddSharedComponentManaged(new ProcessingBatchIndex());
 				AddComponent(new DirtyArea());
+				AddComponent(new ScheduledDirtyRect());
 
 				AddComponent(new ColliderStatus());
 			}

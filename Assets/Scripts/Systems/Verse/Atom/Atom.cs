@@ -1,6 +1,8 @@
 using UnityEngine;
 using Unity.Entities;
 using Unity.Collections;
+using Unity.Mathematics;
+using System;
 
 namespace Verse
 {
@@ -9,33 +11,31 @@ namespace Verse
 		public struct Matter : IComponentData
 		{
 			[ReadOnly]
-			public Entity matter;
+			public Entity value;
 
-			public Matter(Entity matter)
-			{
-				this.matter = matter;
-			}
+			public Matter(Entity value) { this.value = value; }
+		}
+
+		public struct Velocity : IComponentData
+		{
+			public float2 value;
+
+			public Velocity(float2 value) { this.value = value; }
+
+			public static implicit operator Velocity(float2 value) => new Velocity(value);
 		}
 
 		public struct Color : IComponentData
 		{
-			public Color32 color;
-			public Color(Color32 color)
-			{
-				this.color = color;
-			}
+			public AtomColor value;
+			public Color(AtomColor value) { this.value = value; }
+			public static implicit operator AtomColor(Color color) => color.value;
 		}
 
 		public struct Temperature : IComponentData
 		{
-			public float temperature;
-			public Temperature(float temperature)
-			{
-				this.temperature = temperature;
-			}
+			public float value;
+			public Temperature(float value) { this.value = value; }
 		}
-		
-		public static Entity GetMatter(EntityManager dstManager, Entity atom) =>
-			dstManager.GetComponentData<Matter>(atom).matter;
 	}
 }
