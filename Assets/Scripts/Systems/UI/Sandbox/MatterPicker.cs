@@ -7,7 +7,7 @@ using Verse;
 
 namespace Apes.UI
 {
-	public class MatterPicker : MonoEcs
+	public class MatterPicker : MonoBehaviour
 	{
 		[SerializeField]
 		private MatterButton buttonPrefab;

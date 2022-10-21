@@ -82,6 +82,8 @@ namespace Verse
 		public static Coord Max(Coord a, Coord b) => new(math.max(a.x, b.x), math.max(a.y, b.y));
 
 		public static implicit operator Coord(Vector2Int coord) => new(coord);
+		public static implicit operator Coord(int2 coord) => new(coord);
+		public static implicit operator int2(Coord coord) => coord.xy;
 		public static implicit operator float2(Coord coord) => coord.xy;
 		public static implicit operator Vector2(Coord coord) => new(coord.x, coord.y);
 
@@ -106,7 +108,7 @@ namespace Verse
 		public override bool Equals(object other)
 		{
 			if (other is Coord otherCoord)
-				return Equals(otherCoord);
+				return xy.Equals(otherCoord.xy);
 			return false;
 		}
 

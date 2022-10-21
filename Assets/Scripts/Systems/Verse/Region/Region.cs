@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Entities;
 using System;
+using Unity.Mathematics;
 
 namespace Verse
 {
@@ -31,8 +32,8 @@ namespace Verse
 
 		public struct SpatialIndex : IComponentData
 		{
+			public int2 index;
 			public Coord origin;
-			public Coord index;
 
 			public SpatialIndex(Coord spatialIndex) : this()
 			{

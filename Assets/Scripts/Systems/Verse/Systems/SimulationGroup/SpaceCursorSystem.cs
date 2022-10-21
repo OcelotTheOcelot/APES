@@ -34,9 +34,9 @@ namespace Verse
 			Camera camera = Camera.main;
 
 			Entities.WithAll<Space.Tag>().ForEach(
-				(in LocalToWorldTransform transform) =>
+				(in LocalToWorldTransform spaceTransform) =>
 				{
-					Coord = Space.WorldToSpace(transform, camera.ScreenToWorldPoint(cursorPos));
+					Coord = Space.WorldToSpaceCoord(spaceTransform, camera.ScreenToWorldPoint(cursorPos));
 				}
 			).WithoutBurst().Run();
 		}

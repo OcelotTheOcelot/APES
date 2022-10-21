@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Verse
 {
-	public static class AtomPhysics
+	public static class ParticlePhysics
 	{
 		public static readonly float maxVelocity = 32f;
 		public static readonly float gravity = 9.8f;

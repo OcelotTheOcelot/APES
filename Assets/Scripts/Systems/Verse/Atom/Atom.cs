@@ -16,15 +16,6 @@ namespace Verse
 			public Matter(Entity value) { this.value = value; }
 		}
 
-		public struct Velocity : IComponentData
-		{
-			public float2 value;
-
-			public Velocity(float2 value) { this.value = value; }
-
-			public static implicit operator Velocity(float2 value) => new Velocity(value);
-		}
-
 		public struct Color : IComponentData
 		{
 			public AtomColor value;

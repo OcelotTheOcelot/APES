@@ -1,6 +1,5 @@
+using System.Linq;
 using Unity.Entities;
-
-using static Verse.Atom;
 
 namespace Verse
 {
@@ -12,9 +11,9 @@ namespace Verse
 		{
 			base.OnCreate();
 
-            RequireForUpdate<Prefabs.RegionPrefab>();
-            RequireForUpdate<Prefabs.ChunkPrefab>();
-        }
+			RequireForUpdate<Prefabs.RegionPrefab>();
+			RequireForUpdate<Prefabs.ChunkPrefab>();
+		}
 
 		protected override void OnStartRunning()
 		{
@@ -25,13 +24,22 @@ namespace Verse
 				chunk: GetSingleton<Prefabs.ChunkPrefab>().prefab
 			);
 
+			ComponentType[] atomComponents = new[]
+			{
+				ComponentType.ReadWrite<Atom.Matter>(),
+				ComponentType.ReadWrite<Atom.Color>(),
+				ComponentType.ReadWrite<Atom.Temperature>()
+			};
+			ComponentType[] particleComponents = new[]
+			{
+				ComponentType.ReadWrite<Particle.OriginalAtom>(),
+				ComponentType.ReadWrite<Particle.Velocity>(),
+				ComponentType.ReadWrite<Particle.Position>()
+			};
+
 			Archetypes.RegisterArchetypes(
-				atom: EntityManager.CreateArchetype(
-					ComponentType.ReadWrite<Atom.Matter>(),
-					ComponentType.ReadWrite<Color>(),
-					ComponentType.ReadWrite<Temperature>(),
-					ComponentType.ReadWrite<Velocity>()
-				)
+				atom: EntityManager.CreateArchetype(atomComponents),
+				particle: EntityManager.CreateArchetype(particleComponents)
 			);
 
 			Enabled = false;

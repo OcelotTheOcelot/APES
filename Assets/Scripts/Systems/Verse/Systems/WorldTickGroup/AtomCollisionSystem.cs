@@ -13,7 +13,7 @@ using UnityEngine.Rendering;
 
 namespace Verse
 {
-	[UpdateInGroup(typeof(WorldTickSystemGroup))]
+	[UpdateInGroup(typeof(VerseTickSystemGroup))]
 	[UpdateAfter(typeof(AtomPhysicsSystem))]
 	public partial class AtomCollisionSystem : SystemBase
 	{

@@ -8,7 +8,7 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Verse
 {
-	[UpdateInGroup(typeof(WorldTickSystemGroup))]
+	[UpdateInGroup(typeof(VerseTickSystemGroup))]
 	[UpdateBefore(typeof(AtomPhysicsSystem))]
 	public partial class RegionTextureProcessingSystem : SystemBase
 	{

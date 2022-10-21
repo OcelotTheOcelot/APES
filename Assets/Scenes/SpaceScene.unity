@@ -156,8 +156,8 @@ MonoBehaviour:
   controls:
     cameraPanningSpeed: 0.1
     cameraMoveSpeed: 10
-    cameraZoomSpeed: 10
-    cameraZoomSmoothing: 5
+    cameraZoomSpeed: 5
+    cameraZoomSmoothing: 10
     cameraMoveSpeedZoomCorrection: 10
 --- !u!4 &596715479
 Transform:

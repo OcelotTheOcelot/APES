@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace Verse
 {
-	[UpdateInGroup(typeof(WorldTickSystemGroup), OrderLast = true)]
+	[UpdateInGroup(typeof(VerseTickSystemGroup), OrderLast = true)]
 	public partial class GizmoSystem : SystemBase
 	{
 		private float tickDuration;

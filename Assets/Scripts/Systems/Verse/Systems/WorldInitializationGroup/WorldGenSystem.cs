@@ -30,14 +30,14 @@ namespace Verse.WorldGen
 			regionQuery.AddSharedComponentFilter(new Region.Processing { state = Region.Processing.State.PendingGeneration });
 
 			endSimulationEntityCommandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
-		}
+
+        }
 
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
 
 			noise = new NativeArray<float>(Space.regionSize, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-
 		}
 
 		protected override void OnUpdate()
@@ -94,9 +94,7 @@ namespace Verse.WorldGen
 			{
 				Coord chunkOrigin = regionalIndexes[chunk].origin;
 
-				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.SetBuffer<Chunk.AtomBufferElement>(chunk);
-				foreach (Chunk.AtomBufferElement oldAtom in atomBuffers[chunk])
-					atomBuffer.Add(oldAtom);
+				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.CloneBuffer<Chunk.AtomBufferElement>(chunk, atomBuffers[chunk]);
 
 				foreach (Coord chunkCoord in Enumerators.GetSquare(Space.chunkSize))
 					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);

@@ -24,22 +24,21 @@ namespace Verse
 			out Coord neighbourCoord
 		)
 		{
-			int chunkSize = Space.chunkSize;
 			neighbourAtoms = atoms;
 			neighbourCoord = chunkCoord;
 			Entity neighbour;
 
-			if (chunkCoord.x >= chunkSize)
+			if (chunkCoord.x >= Space.chunkSize)
 			{
-				neighbourCoord.x = chunkCoord.x - chunkSize;
-				if (chunkCoord.y >= chunkSize)
+				neighbourCoord.x = chunkCoord.x - Space.chunkSize;
+				if (chunkCoord.y >= Space.chunkSize)
 				{
-					neighbourCoord.y -= chunkSize;
+					neighbourCoord.y -= Space.chunkSize;
 					neighbour = neighbours.NorthEast;
 				}
 				else if (chunkCoord.y < 0)
 				{
-					neighbourCoord.y += chunkSize;
+					neighbourCoord.y += Space.chunkSize;
 					neighbour = neighbours.SouthEast;
 				}
 				else
@@ -52,15 +51,15 @@ namespace Verse
 
 			if (chunkCoord.x < 0)
 			{
-				neighbourCoord.x = chunkCoord.x + chunkSize;
-				if (chunkCoord.y >= chunkSize)
+				neighbourCoord.x = chunkCoord.x + Space.chunkSize;
+				if (chunkCoord.y >= Space.chunkSize)
 				{
-					neighbourCoord.y -= chunkSize;
+					neighbourCoord.y -= Space.chunkSize;
 					neighbour = neighbours.NorthWest;
 				}
 				else if (chunkCoord.y < 0)
 				{
-					neighbourCoord.y += chunkSize;
+					neighbourCoord.y += Space.chunkSize;
 					neighbour = neighbours.SouthWest;
 				}
 				else
@@ -71,15 +70,15 @@ namespace Verse
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 
-			if (chunkCoord.y >= chunkSize)
+			if (chunkCoord.y >= Space.chunkSize)
 			{
-				neighbourCoord.y -= chunkSize;
+				neighbourCoord.y -= Space.chunkSize;
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.North, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 			
 			if (chunkCoord.y < 0)
 			{
-				neighbourCoord.y += chunkSize;
+				neighbourCoord.y += Space.chunkSize;
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 
@@ -99,7 +98,6 @@ namespace Verse
 			if (chunk == Entity.Null)
 			{
 				atom = Entity.Null;
-
 				return false;
 			}
 
