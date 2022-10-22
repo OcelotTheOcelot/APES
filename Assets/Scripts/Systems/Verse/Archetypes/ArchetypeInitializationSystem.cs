@@ -28,8 +28,9 @@ namespace Verse
 			{
 				ComponentType.ReadWrite<Atom.Matter>(),
 				ComponentType.ReadWrite<Atom.Color>(),
-				ComponentType.ReadWrite<Atom.Temperature>()
-			};
+				ComponentType.ReadWrite<Atom.Temperature>(),
+				ComponentType.ReadWrite<Atom.Velocity>()
+            };
 			ComponentType[] particleComponents = new[]
 			{
 				ComponentType.ReadWrite<Particle.OriginalAtom>(),

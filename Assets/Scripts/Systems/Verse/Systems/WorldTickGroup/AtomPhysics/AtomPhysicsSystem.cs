@@ -8,7 +8,7 @@ using Unity.Mathematics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using static Verse.Chunk;
-using static Verse.ParticlePhysics;
+using static Verse.AtomPhysics;
 using System;
 using Apes.UI;
 using Apes.Random;
@@ -40,6 +40,7 @@ namespace Verse
 			var matters = GetComponentLookup<Atom.Matter>(isReadOnly: true);
 			var states = GetComponentLookup<Matter.AtomState>(isReadOnly: true);
 			var physProps = GetComponentLookup<Matter.PhysicProperties>(isReadOnly: true);
+			var velocities = GetComponentLookup<Atom.Velocity>();
 			var atomBuffers = GetBufferLookup<AtomBufferElement>();
 
 			var dirtyAreas = GetComponentLookup<DirtyArea>();
@@ -47,7 +48,7 @@ namespace Verse
 			JobHandle jobHandle = default;
 			for (int i = 0; i < processingBatches; i++)
 			{
-				physicsQuery.SetSharedComponentFilter(new Chunk.ProcessingBatchIndex { batchIndex = i });
+				physicsQuery.SetSharedComponentFilter(new ProcessingBatchIndex { batchIndex = i });
 
 				jobHandle = new ProcessChunkJob
 				{
@@ -56,7 +57,8 @@ namespace Verse
 					states = states,
 					physicProperties = physProps,
 					atomBuffers = atomBuffers,
-					dirtyAreas = dirtyAreas
+					dirtyAreas = dirtyAreas,
+					velocities = velocities
 				}.ScheduleParallel(physicsQuery, jobHandle);
 				jobHandle.Complete();
 			}
@@ -80,12 +82,13 @@ namespace Verse
 			public ComponentLookup<DirtyArea> dirtyAreas;
 
 			[NativeDisableParallelForRestriction]
+			public ComponentLookup<Atom.Velocity> velocities;
+
+			/* these fields can be moved to locals */
+			[NativeDisableParallelForRestriction]
 			private DynamicBuffer<AtomBufferElement> atoms;
 
-			public void Execute(
-				Entity chunk,
-				in Neighbourhood neighbours
-			)
+			public void Execute(Entity chunk, in Neighbourhood neighbours)
 			{
 				DirtyArea dirtyArea = dirtyAreas[chunk];
 				if (!dirtyArea.active)
@@ -140,13 +143,15 @@ namespace Verse
 				Matter.State state = states[matter].value;
 				Matter.PhysicProperties physProps = physicProperties[matter];
 
+				Atom.Velocity velocity = velocities[atom];
+
 				switch (state)
 				{
 					case Matter.State.Solid:
 						break;
 
 					case Matter.State.Liquid:
-						ProcessLiquid(ref dirtyArea, atoms, neighbours, matter, physProps, new Coord(x, y));
+						ProcessLiquid(ref dirtyArea, atoms, neighbours, new Coord(x, y), ref velocity.value, matter, physProps);
 						break;
 
 					case Matter.State.Gaseous:
@@ -155,83 +160,102 @@ namespace Verse
 					default:
 						break;
 				}
+
+				velocities[atom] = velocity;
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private void ProcessLiquid(
-				ref DirtyArea dirtyArea,
-				DynamicBuffer<AtomBufferElement> atoms,
-				Neighbourhood neighbours,
-				Entity atomMatter,
-				Matter.PhysicProperties atomProps,
-				Coord atomCoord
+				ref DirtyArea dirtyArea, DynamicBuffer<AtomBufferElement> atoms, Neighbourhood neighbours,
+				Coord coord, ref float2 vel, Entity matter, Matter.PhysicProperties physProps
 			)
 			{
-				Coord southCoord = atomCoord + Coord.south;
-				if (atoms.GetAtomNeighbourFallback(
-					atomBuffers, neighbours, southCoord,
-					out Entity bottomAtom, out DynamicBuffer<AtomBufferElement> otherAtoms, out Coord otherCoord
-					) && IsPassable(bottomAtom, atomMatter, atomProps))
+				if (atoms.GetAtomNeighbourFallback(atomBuffers, neighbours, coord + Coord.south, out Entity bottomAtom, out _, out _))
 				{
-					AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
-
-					CoordRect dirtyRect = new(southCoord + Coord.southWest, atomCoord + Coord.northEast);
-					neighbours.MarkDirty(ref dirtyArea, dirtyAreas, dirtyRect, safe: true);
-
-					return;
-				}
-
-				int xDir = ((int)(atomCoord.x * math.PI) & atomCoord.y & tick & 0b1) == 1 ? 1 : -1;
-				Coord mainSide = atomCoord, altSide = atomCoord;
-
-				mainSide.x += xDir;
-				bool hasMainSide = atoms.GetAtomNeighbourFallback(
-					atomBuffers, neighbours, mainSide,
-					out Entity mainSideAtom, out DynamicBuffer<AtomBufferElement> mainSideAtoms, out Coord mainSideCoord
-				);
-				bool mainSidePassable = hasMainSide && IsPassable(mainSideAtom, atomMatter, atomProps);
-
-				if (mainSidePassable && atoms.GetAtomNeighbourFallback(
-					atomBuffers, neighbours, mainSide,
-					out bottomAtom, out otherAtoms, out otherCoord
-				))
-				{
-					if (IsPassable(bottomAtom, atomMatter, atomProps))
+					if (IsPassable(bottomAtom, matter, physProps))
 					{
-						AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
-						neighbours.MarkDirty(ref dirtyArea, dirtyAreas, CoordRect.CreateRectBetween(atomCoord, otherCoord, margin: 1), safe: true);
-
-						return;
+						vel.y += perTickGravity;
+					}
+					else  // if other atom is liquid
+					{
+						// Perfectly inelastic collision
+						float2 otherVel = velocities[bottomAtom].value;
+						vel.y = otherVel.y = (vel.y + otherVel.y) * .5f;
+						velocities[bottomAtom] = new Atom.Velocity(otherVel);
 					}
 				}
 
-				altSide.x -= xDir;
-				bool hasAltSide = atoms.GetAtomNeighbourFallback(
-					atomBuffers, neighbours, altSide,
-					out Entity altSideAtom, out DynamicBuffer<AtomBufferElement> altSideAtoms, out Coord altSideCoord
-				);
-				bool altSidePassable = hasAltSide && IsPassable(altSideAtom, atomMatter, atomProps);
+				bool moved = false;
+				Coord lastLineCoord = coord;
 
-				if (altSidePassable && atoms.GetAtomNeighbourFallback(
-					atomBuffers, neighbours, altSide,
-					out bottomAtom, out otherAtoms, out otherCoord
-				))
+				int tickDir = (tick << 1) - 1;
+
+                int xDir = (vel.x == 0) ? tickDir : (vel.x >= 0 ? 1 : -1);
+				int yDir = vel.y >= 0 ? 1 : -1;
+
+				Coord lastLineCoordSwappable = coord;
+				DynamicBuffer<AtomBufferElement> lastLineBuffer = atoms;
+
+				float2 absVel = math.abs(vel);
+				if (absVel.x > absVel.y)
 				{
-					if (IsPassable(bottomAtom, atomMatter, atomProps))
-					{
-						AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
-						neighbours.MarkDirty(ref dirtyArea, dirtyAreas, CoordRect.CreateRectBetween(atomCoord, otherCoord, margin: 1), safe: true);
+					float yShift = vel.y / absVel.x;
+					int toX = Mathf.CeilToInt(absVel.x);
 
-						return;
+					for (int deltaX = 1; deltaX <= toX; deltaX++)
+						;
+
+                }
+				else
+				{
+					float xShift = vel.x / absVel.y;
+					int toY = Mathf.CeilToInt(absVel.y);
+
+					for (int deltaY = 1; deltaY <= toY; deltaY++)
+					{
+						Coord nextCoord = coord + new int2(Mathf.RoundToInt(xShift * deltaY), deltaY * yDir);
+
+						if (!atoms.GetAtomNeighbourFallback(
+						   atomBuffers, neighbours, nextCoord,
+						   out Entity otherAtom,
+						   out DynamicBuffer<AtomBufferElement> otherAtoms,
+						   out Coord otherCoord
+						))
+							break;
+
+						if (!IsPassable(otherAtom, matter, physProps))
+						{
+							if (atoms.GetAtomNeighbourFallback(
+								atomBuffers, neighbours, new Coord(nextCoord.x - xDir, nextCoord.y),
+								out Entity slopeAtom, out _, out _
+							) && IsPassable(slopeAtom, matter, physProps))
+							{
+								vel = ReflectAgainst45(vel, -xDir, -yDir);
+								moved = true;
+							}
+							else
+							{
+								vel.y = 0;
+							}
+
+							break;
+						}
+
+						moved = true;
+						lastLineCoord = nextCoord;
+						lastLineCoordSwappable = otherCoord;
+						lastLineBuffer = otherAtoms;
 					}
 				}
 
-				if (altSidePassable)
+				if (moved)
 				{
-					AtomBufferExtention.Swap(atoms, atomCoord, altSideAtoms, altSide);
-					neighbours.MarkDirty(ref dirtyArea, dirtyAreas, CoordRect.CreateRectBetween(atomCoord, altSide, margin: 1), safe: true);
-					
-					return;
+					AtomBufferExtention.Swap(atoms, coord, lastLineBuffer, lastLineCoordSwappable);
+
+					CoordRect dirtyRect = CoordRect.CreateRectBetween(coord, lastLineCoord, margin: 1);
+
+					dirtyArea.MarkDirty(dirtyRect, safe: true);
+					neighbours.MarkDirty(dirtyAreas, dirtyRect, safe: true);
 				}
 			}
 

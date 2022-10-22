@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using static Verse.Chunk;
 using static Verse.Particle;
-using static Verse.ParticlePhysics;
+using static Verse.AtomPhysics;
 
 namespace Verse
 {
