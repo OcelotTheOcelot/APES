@@ -30,7 +30,7 @@ namespace Verse
 
 			if (chunkCoord.x >= Space.chunkSize)
 			{
-				neighbourCoord.x = chunkCoord.x - Space.chunkSize;
+				neighbourCoord.x -= Space.chunkSize;
 				if (chunkCoord.y >= Space.chunkSize)
 				{
 					neighbourCoord.y -= Space.chunkSize;
@@ -48,10 +48,9 @@ namespace Verse
 
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
-
-			if (chunkCoord.x < 0)
+			else if (chunkCoord.x < 0)
 			{
-				neighbourCoord.x = chunkCoord.x + Space.chunkSize;
+				neighbourCoord.x += Space.chunkSize;
 				if (chunkCoord.y >= Space.chunkSize)
 				{
 					neighbourCoord.y -= Space.chunkSize;
@@ -72,21 +71,86 @@ namespace Verse
 
 			if (chunkCoord.y >= Space.chunkSize)
 			{
-				neighbourCoord.y -= Space.chunkSize;
+                neighbourCoord.y -= Space.chunkSize;
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.North, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
-			
-			if (chunkCoord.y < 0)
+			else if (chunkCoord.y < 0)
 			{
 				neighbourCoord.y += Space.chunkSize;
-				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
+                return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
 
 			neighbourAtom = atoms.GetAtom(chunkCoord);
 			return true;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool GetAtomNeighbourFallback(
+            this DynamicBuffer<AtomBufferElement> atoms, BufferLookup<AtomBufferElement> atomBuffers,
+            Neighbourhood neighbours, Coord chunkCoord, out Entity atom
+        )
+        {
+            Coord neighbourCoord = chunkCoord;
+			Entity neighbour;
+
+            if (chunkCoord.x >= Space.chunkSize)
+            {
+                neighbourCoord.x -= Space.chunkSize;
+                if (chunkCoord.y >= Space.chunkSize)
+                {
+                    neighbourCoord.y -= Space.chunkSize;
+                    neighbour = neighbours.NorthEast;
+                }
+                else if (chunkCoord.y < 0)
+                {
+                    neighbourCoord.y += Space.chunkSize;
+                    neighbour = neighbours.SouthEast;
+                }
+                else
+                {
+                    neighbour = neighbours.East;
+                }
+
+                return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, out atom);
+            }
+            else if (chunkCoord.x < 0)
+            {
+                neighbourCoord.x += Space.chunkSize;
+                if (chunkCoord.y >= Space.chunkSize)
+                {
+                    neighbourCoord.y -= Space.chunkSize;
+                    neighbour = neighbours.NorthWest;
+                }
+                else if (chunkCoord.y < 0)
+                {
+                    neighbourCoord.y += Space.chunkSize;
+                    neighbour = neighbours.SouthWest;
+                }
+                else
+                {
+                    neighbour = neighbours.West;
+                }
+
+                return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, out atom);
+            }
+
+            if (chunkCoord.y >= Space.chunkSize)
+            {
+                neighbourCoord.y -= Space.chunkSize;
+                return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.North, neighbourCoord, out atom);
+            }
+            else if (chunkCoord.y < 0)
+            {
+				neighbour = neighbours.South;
+                neighbourCoord.y += Space.chunkSize;
+                return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, out atom);
+            }
+
+            atom = atoms.GetAtom(chunkCoord);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static bool SafeGetAtomFromPotentialChunk(
 			BufferLookup<AtomBufferElement> atomBuffers,
 			Entity chunk,
@@ -106,7 +170,22 @@ namespace Verse
 			return true;
 		}
 
-		public static void Swap(
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SafeGetAtomFromPotentialChunk(
+			BufferLookup<AtomBufferElement> atomBuffers, Entity chunk, Coord chunkCoord, out Entity atom
+        )
+        {
+            if (chunk == Entity.Null)
+            {
+                atom = Entity.Null;
+                return false;
+            }
+            
+			atom = atomBuffers[chunk].GetAtom(chunkCoord);
+            return true;
+        }
+
+        public static void Swap(
 			this DynamicBuffer<AtomBufferElement> atoms,
 			Coord coordA, Coord coordB
 		)

@@ -170,7 +170,7 @@ namespace Verse
 				Coord coord, ref float2 vel, Entity matter, Matter.PhysicProperties physProps
 			)
 			{
-				if (atoms.GetAtomNeighbourFallback(atomBuffers, neighbours, coord + Coord.south, out Entity bottomAtom, out _, out _))
+				if (atoms.GetAtomNeighbourFallback(atomBuffers, neighbours, coord + Coord.south, out Entity bottomAtom))
 				{
 					if (IsPassable(bottomAtom, matter, physProps))
 					{
@@ -227,12 +227,20 @@ namespace Verse
 						{
 							if (atoms.GetAtomNeighbourFallback(
 								atomBuffers, neighbours, new Coord(nextCoord.x - xDir, nextCoord.y),
-								out Entity slopeAtom, out _, out _
+								out Entity slopeAtom
 							) && IsPassable(slopeAtom, matter, physProps))
 							{
 								vel = ReflectAgainst45(vel, -xDir, -yDir);
 								moved = true;
 							}
+							else if (atoms.GetAtomNeighbourFallback(
+                                atomBuffers, neighbours, new Coord(nextCoord.x + xDir, nextCoord.y),
+                                out slopeAtom
+                            ) && IsPassable(slopeAtom, matter, physProps))
+                            {
+                                vel = ReflectAgainst45(vel, xDir, -yDir);
+                                moved = true;
+                            }
 							else
 							{
 								vel.y = 0;
