@@ -9,7 +9,9 @@ namespace Verse.WorldGen
 		public int terrainHeight;
 		public int hillsHeight;
 
-		public GameObject soilMatter;
+        public int waterTestHeight;
+
+        public GameObject soilMatter;
 		public GameObject graniteMatter;
 		public GameObject waterMatter;
 
@@ -22,7 +24,9 @@ namespace Verse.WorldGen
 						terrainHeight = authoring.terrainHeight,
 						hillsHeight = authoring.hillsHeight,
 
-						soilMatter = GetEntity(authoring.soilMatter),
+						waterTestHeight = authoring.waterTestHeight,
+
+                        soilMatter = GetEntity(authoring.soilMatter),
 						graniteMatter = GetEntity(authoring.graniteMatter),
 						waterMatter = GetEntity(authoring.waterMatter)
 					}
@@ -33,7 +37,9 @@ namespace Verse.WorldGen
 
 	public struct TerrainGenerationData : IComponentData
 	{
-		public int terrainHeight;
+        public int waterTestHeight;
+
+        public int terrainHeight;
 		public int hillsHeight;
 
 		public Entity soilMatter;

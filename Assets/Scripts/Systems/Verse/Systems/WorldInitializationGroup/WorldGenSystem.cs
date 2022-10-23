@@ -118,7 +118,7 @@ namespace Verse.WorldGen
 				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
 
-                if (spaceCoord.y >= 512 * 3)
+                if (spaceCoord.y >= terrainGenerationData.waterTestHeight)
                     CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
             }
 
