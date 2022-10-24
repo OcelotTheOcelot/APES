@@ -17,7 +17,9 @@ namespace Verse
 		protected override void OnCreate()
 		{
 			base.OnCreate();
-			
+
+			RequireForUpdate<GizmoSettings>();
+
 			regionQuery = GetEntityQuery(
 				ComponentType.ReadOnly<Region.SpatialIndex>(),
 				ComponentType.ReadOnly<LocalToWorldTransform>()
@@ -39,29 +41,45 @@ namespace Verse
 
 		protected override void OnUpdate()
 		{
-			//new DrawRegionGizmosJob
-			//{
-			//	chunkBorderColor = new Color(.8f, .5f, 0f, .25f),
-			//	regionBorderColor = new Color(1f, 1f, 0f, .25f),
+			GizmoSettings settings = GetSingleton<GizmoSettings>();
 
-			//	duration = tickDuration,
-			//}.Run(regionQuery);
+			if (settings.showDirtyAreas)
+			{
+				new DrawDirtyAreaGizmosJob
+				{
+					dirtyAreaColor = new Color(1f, 0f, 0f, .25f),
+					duration = tickDuration
+				}.Run(chunkQuery);
+			}
 
-			//new DrawDirtyAreaGizmosJob
-			//{
-			//	dirtyAreaColor = new Color(1f, 0f, 0f, .25f),
-			//	duration = tickDuration
-			//}.Run(chunkQuery);
+			if (settings.showRegionBorders || settings.showChunkBorders)
+			{
+				new DrawRegionGizmosJob
+				{
+					showChunkBorders = settings.showChunkBorders,
 
-			//new DrawNeighbourhoodGizmosJob
-			//{
-			//	neighbourColor = new Color(.8f, 0f, 0f, 1f),
-			//	duration = tickDuration
-			//}.Run(chunkQuery);
+					chunkBorderColor = new Color(.8f, .5f, 0f, .25f),
+					regionBorderColor = new Color(1f, 1f, 0f, .25f),
+
+					duration = tickDuration,
+				}.Run(regionQuery);
+			}
+
+			if (settings.showNullNeighbours)
+			{
+				new DrawNeighbourhoodGizmosJob
+				{
+					neighbourColor = new Color(.8f, 0f, 0f, 1f),
+					duration = tickDuration
+				}.Run(chunkQuery);
+			}
 		}
 
 		public partial struct DrawRegionGizmosJob : IJobEntity
 		{
+			[ReadOnly]
+			public bool showChunkBorders;
+
 			[ReadOnly]
 			public float duration;
 
@@ -82,16 +100,19 @@ namespace Verse
 				Vector3 rightBorderShift = size.x * Vector3.right;
 				Vector3 upperBorderShift = size.y * Vector3.up;
 
-				for (int y = chunkSize; y < regionSize; y += chunkSize)
+				if (showChunkBorders)
 				{
-					Vector3 line = origin + y * metersPerCell * Vector3.up;
-					Debug.DrawLine(line, line + rightBorderShift, chunkBorderColor, duration: duration);
-				}
+					for (int y = chunkSize; y < regionSize; y += chunkSize)
+					{
+						Vector3 line = origin + y * metersPerCell * Vector3.up;
+						Debug.DrawLine(line, line + rightBorderShift, chunkBorderColor, duration: duration);
+					}
 
-				for (int x = chunkSize; x < regionSize; x += chunkSize)
-				{
-					Vector3 line = origin + x * metersPerCell * Vector3.right;
-					Debug.DrawLine(line, line + upperBorderShift, chunkBorderColor, duration: duration);
+					for (int x = chunkSize; x < regionSize; x += chunkSize)
+					{
+						Vector3 line = origin + x * metersPerCell * Vector3.right;
+						Debug.DrawLine(line, line + upperBorderShift, chunkBorderColor, duration: duration);
+					}
 				}
 
 				Debug.DrawLine(origin, origin + rightBorderShift, regionBorderColor, duration: duration);

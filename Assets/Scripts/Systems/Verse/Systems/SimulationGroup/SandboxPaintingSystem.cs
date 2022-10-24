@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using static Verse.Chunk;
 using Unity.Burst;
+using Unity.Mathematics;
 
 namespace Verse
 {
@@ -89,6 +90,8 @@ namespace Verse
 					spaceCoord = spaceCoord,
 					atomArchetype = Archetypes.Atom,
 
+					tick = TickerSystem.CurrentTick,
+
 					matter = matter,
 					creationDatas = GetComponentLookup<Matter.Creation>(),
 					matterColors = GetBufferLookup<Matter.ColorBufferElement>(),
@@ -168,7 +171,7 @@ namespace Verse
 			}
 		}
 
-		// [BurstCompile]
+		[BurstCompile]
 		public partial struct PaintJob : IJobEntity
 		{
 			[ReadOnly]
@@ -181,6 +184,9 @@ namespace Verse
 			public Entity matter;
 			[ReadOnly]
 			public EntityArchetype atomArchetype;
+
+			[ReadOnly]
+			public int tick;
 
 			[ReadOnly]
 			public ComponentLookup<Atom.Matter> atomMatters;
@@ -237,11 +243,15 @@ namespace Verse
 
 				Entity newAtom = ecb.CreateEntity(sortKey, atomArchetype);
 
-				ecb.AddComponent(sortKey, newAtom, new Atom.Matter { value = matter });
+				ecb.SetComponent(sortKey, newAtom, new Atom.Matter { value = matter });
 
 				Matter.Creation creationData = creationDatas[matter];
-				ecb.AddComponent(sortKey, newAtom, new Atom.Temperature { value = creationData.temperature });
-				ecb.AddComponent<Atom.Color>(sortKey, newAtom, Utils.Pick(matterColors[matter]));
+				ecb.SetComponent(sortKey, newAtom, new Atom.Temperature { value = creationData.temperature });
+				ecb.SetComponent<Atom.Color>(sortKey, newAtom, Utils.Pick(matterColors[matter], tick + coord.y*Space.chunkSize + coord.x));
+
+				// Velocity testing
+				float xVel = math.sin(tick / math.PI) * .5f;
+				ecb.SetComponent(sortKey, newAtom, new Atom.Velocity(new float2(xVel, 0f)));
 
 				newAtoms.SetAtom(coord, newAtom);
 			}

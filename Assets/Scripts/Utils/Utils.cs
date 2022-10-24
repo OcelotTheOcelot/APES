@@ -2,6 +2,7 @@
 using System.Linq;
 using Unity.Entities;
 using UnityEngine;
+using Verse;
 
 public static class Utils
 {
@@ -74,12 +75,15 @@ public static class Utils
 	public static T Pick<T>(this DynamicBuffer<T> buffer) where T : unmanaged, IBufferElementData =>
 		buffer[Apes.Random.FastRandom.GlobalInstance.Range(0, buffer.Length - 1)];
 
-	/// <summary>
-	/// Searches for child transform of transfrom parent with given name.
-	/// </summary>
-	/// <param name="parent">Start point of the search.</param>
-	/// <param name="name">The name of the game object to find.</param>
-	public static Transform FindChildRecursively(Transform parent, string name)
+    public static T Pick<T>(this DynamicBuffer<T> buffer, int seed) where T : unmanaged, IBufferElementData =>
+        buffer[AtomPhysics.Hash(seed) % buffer.Length];
+
+    /// <summary>
+    /// Searches for child transform of transfrom parent with given name.
+    /// </summary>
+    /// <param name="parent">Start point of the search.</param>
+    /// <param name="name">The name of the game object to find.</param>
+    public static Transform FindChildRecursively(Transform parent, string name)
 	{
 		if (parent.name.Equals(name))
 			return parent;

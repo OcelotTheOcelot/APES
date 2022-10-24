@@ -26,26 +26,16 @@ namespace Verse
 		}
 
 		public int Product => x * y;
+		public int Sum => x + y;
 
 		public Coord(Vector2Int coord) : this(coord.x, coord.y) { }
-		public Coord(int2 xy)
-		{
-			this.xy = xy;
-		}
+		public Coord(int2 xy) { this.xy = xy; }
+		public Coord(int x, int y) : this() { xy = new(x, y); }
+		public Coord(int value) : this() { xy = new(value); }
 
-		public Coord(int x, int y) : this()
-		{
-			xy = new(x, y);
-		}
-
-		public Coord(int value) : this()
-		{
-			xy = new(value, value);
-		}
-
-		public Coord Round() => new(Mathf.RoundToInt(x), Mathf.RoundToInt(y));
-		public Coord Ceil() => new(Mathf.CeilToInt(x), Mathf.CeilToInt(y));
-		public Coord Floor() => new(Mathf.FloorToInt(x), Mathf.FloorToInt(y));
+		public static Coord Round(float2 vec) => new(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
+		public static Coord Ceil(float2 vec) => new(Mathf.CeilToInt(vec.x), Mathf.CeilToInt(vec.y));
+		public static Coord Floor(float2 vec) => new(Mathf.FloorToInt(vec.x), Mathf.FloorToInt(vec.y));
 
 		public void Set(int x, int y)
 		{
@@ -78,7 +68,9 @@ namespace Verse
 				y = max.y;
 		}
 
-		public static Coord Min(Coord a, Coord b) => new(math.min(a.x, b.x), math.min(a.y, b.y));
+        public Coord GetShifted(int shiftX, int shiftY) => new(this.x + shiftX, y + shiftY);
+
+        public static Coord Min(Coord a, Coord b) => new(math.min(a.x, b.x), math.min(a.y, b.y));
 		public static Coord Max(Coord a, Coord b) => new(math.max(a.x, b.x), math.max(a.y, b.y));
 
 		public static implicit operator Coord(Vector2Int coord) => new(coord);

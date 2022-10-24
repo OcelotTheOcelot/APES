@@ -135,8 +135,7 @@ namespace Verse
 			private void ProcessAtom(
 				ref DirtyArea dirtyArea,
 				Neighbourhood neighbours,
-				Entity atom,
-				int x, int y
+				Entity atom, int x, int y
 			)
 			{
 				Entity matter = matters[atom].value;
@@ -167,103 +166,109 @@ namespace Verse
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private void ProcessLiquid(
 				ref DirtyArea dirtyArea, DynamicBuffer<AtomBufferElement> atoms, Neighbourhood neighbours,
-				Coord coord, ref float2 vel, Entity matter, Matter.PhysicProperties physProps
+				Coord initialCoord, ref float2 vel, Entity matter, Matter.PhysicProperties physProps
 			)
 			{
-				if (atoms.GetAtomNeighbourFallback(atomBuffers, neighbours, coord + Coord.south, out Entity bottomAtom))
-				{
-					if (IsPassable(bottomAtom, matter, physProps))
-					{
-						vel.y += perTickGravity;
-					}
-					else  // if other atom is liquid
-					{
-						// Perfectly inelastic collision
-						float2 otherVel = velocities[bottomAtom].value;
-						vel.y = otherVel.y = (vel.y + otherVel.y) * .5f;
-						velocities[bottomAtom] = new Atom.Velocity(otherVel);
-					}
-				}
+				float motion = motionPerTick;
+				float2 displacement = float2.zero;
 
 				bool moved = false;
-				Coord lastLineCoord = coord;
+				bool allEmpty = true;
 
-				int tickDir = (tick << 1) - 1;
+				Coord lastCoord = initialCoord;
+				Coord lastSwapCoord = initialCoord;
+				DynamicBuffer<AtomBufferElement> lastSwapBuffer = atoms;
 
-                int xDir = (vel.x == 0) ? tickDir : (vel.x >= 0 ? 1 : -1);
-				int yDir = vel.y >= 0 ? 1 : -1;
-
-				Coord lastLineCoordSwappable = coord;
-				DynamicBuffer<AtomBufferElement> lastLineBuffer = atoms;
-
-				float2 absVel = math.abs(vel);
-				if (absVel.x > absVel.y)
+				while (motion > 0f)
 				{
-					float yShift = vel.y / absVel.x;
-					int toX = Mathf.CeilToInt(absVel.x);
+					#region gravity calculation
 
-					for (int deltaX = 1; deltaX <= toX; deltaX++)
-						;
-
-                }
-				else
-				{
-					float xShift = vel.x / absVel.y;
-					int toY = Mathf.CeilToInt(absVel.y);
-
-					for (int deltaY = 1; deltaY <= toY; deltaY++)
+					if (atoms.GetAtomNeighbourFallback(atomBuffers, neighbours, lastCoord + Coord.south, out Entity nextAtom))
 					{
-						Coord nextCoord = coord + new int2(Mathf.RoundToInt(xShift * deltaY), deltaY * yDir);
-
-						if (!atoms.GetAtomNeighbourFallback(
-						   atomBuffers, neighbours, nextCoord,
-						   out Entity otherAtom,
-						   out DynamicBuffer<AtomBufferElement> otherAtoms,
-						   out Coord otherCoord
-						))
-							break;
-
-						if (!IsPassable(otherAtom, matter, physProps))
+						if (IsPassable(nextAtom, matter, physProps))
 						{
-							if (atoms.GetAtomNeighbourFallback(
-								atomBuffers, neighbours, new Coord(nextCoord.x - xDir, nextCoord.y),
-								out Entity slopeAtom
-							) && IsPassable(slopeAtom, matter, physProps))
-							{
-								vel = ReflectAgainst45(vel, -xDir, -yDir);
-								moved = true;
-							}
-							else if (atoms.GetAtomNeighbourFallback(
-                                atomBuffers, neighbours, new Coord(nextCoord.x + xDir, nextCoord.y),
-                                out slopeAtom
-                            ) && IsPassable(slopeAtom, matter, physProps))
-                            {
-                                vel = ReflectAgainst45(vel, xDir, -yDir);
-                                moved = true;
-                            }
-							else
-							{
-								vel.y = 0;
-							}
-
-							break;
+							vel.y += perTickGravity;
 						}
-
-						moved = true;
-						lastLineCoord = nextCoord;
-						lastLineCoordSwappable = otherCoord;
-						lastLineBuffer = otherAtoms;
+						else  // if other atom is liquid
+						{
+							// Perfectly inelastic collision
+							float2 otherVel = velocities[nextAtom].value;
+							vel.y = otherVel.y = (vel.y + otherVel.y) * .5f;
+							velocities[nextAtom] = new Atom.Velocity(otherVel);
+						}
 					}
+
+					#endregion gravity calculation
+
+
+					float velMag = math.length(vel);
+					if (velMag == 0f)
+						break;
+
+					motion -= 1f / velMag;
+
+
+					#region displacement calculation
+
+					Coord _prevDisp = initialCoord + RoundToCoord(displacement);
+					displacement = math.clamp(displacement + math.normalize(vel), minDisplacement, maxDisplacement);
+
+					Coord nextCoord = initialCoord + RoundToCoord(displacement);
+
+					float2 absDiff = math.abs(nextCoord - lastCoord);
+
+					if (absDiff.x > 1f || absDiff.y > 1f)
+						Debug.LogWarning("Pixel breach!!");
+
+					if (nextCoord == lastCoord)
+					{
+						continue;
+					}
+
+					if (!atoms.GetAtomNeighbourFallback(
+						atomBuffers, neighbours, nextCoord,
+						out nextAtom, out var swapBuffer, out Coord swapCoord
+					))
+					{
+						lastCoord = nextCoord;
+						continue;
+					}
+
+					if (IsPassable(nextAtom, matter, physProps))
+					{
+						moved = true;
+
+						if (nextAtom != Entity.Null)
+						{
+							allEmpty = false;
+							
+							float2 otherVel = velocities[nextAtom].value;
+							vel.y = otherVel.y = (vel.y + otherVel.y) * .5f;
+							velocities[nextAtom] = new Atom.Velocity(otherVel);
+
+							AtomBufferExtention.Swap(lastSwapBuffer, lastSwapCoord, swapBuffer, swapCoord);
+						}
+					}
+					else
+					{
+                        lastCoord = nextCoord;
+                        break;
+					}
+
+					lastSwapBuffer = swapBuffer;
+					lastSwapCoord = swapCoord;
+					lastCoord = nextCoord;
+
+					#endregion displacement calculation
 				}
 
 				if (moved)
 				{
-					AtomBufferExtention.Swap(atoms, coord, lastLineBuffer, lastLineCoordSwappable);
+					if (allEmpty)
+						AtomBufferExtention.Swap(atoms, initialCoord, lastSwapBuffer, lastSwapCoord);
 
-					CoordRect dirtyRect = CoordRect.CreateRectBetween(coord, lastLineCoord, margin: 1);
-
-					dirtyArea.MarkDirty(dirtyRect, safe: true);
-					neighbours.MarkDirty(dirtyAreas, dirtyRect, safe: true);
+					CoordRect dirtyRect = CoordRect.CreateRectBetween(initialCoord, lastCoord, margin: 1);
+					neighbours.MarkDirty(ref dirtyArea, dirtyAreas, dirtyRect, safe: true);
 				}
 			}
 

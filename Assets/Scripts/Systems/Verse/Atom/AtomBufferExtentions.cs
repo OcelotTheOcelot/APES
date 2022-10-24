@@ -48,7 +48,7 @@ namespace Verse
 
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
-			else if (chunkCoord.x < 0)
+			if (chunkCoord.x < 0)
 			{
 				neighbourCoord.x += Space.chunkSize;
 				if (chunkCoord.y >= Space.chunkSize)
@@ -74,7 +74,7 @@ namespace Verse
                 neighbourCoord.y -= Space.chunkSize;
 				return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.North, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
 			}
-			else if (chunkCoord.y < 0)
+			if (chunkCoord.y < 0)
 			{
 				neighbourCoord.y += Space.chunkSize;
                 return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, ref neighbourAtoms, out neighbourAtom);
@@ -113,7 +113,7 @@ namespace Verse
 
                 return SafeGetAtomFromPotentialChunk(atomBuffers, neighbour, neighbourCoord, out atom);
             }
-            else if (chunkCoord.x < 0)
+			if (chunkCoord.x < 0)
             {
                 neighbourCoord.x += Space.chunkSize;
                 if (chunkCoord.y >= Space.chunkSize)
@@ -139,9 +139,8 @@ namespace Verse
                 neighbourCoord.y -= Space.chunkSize;
                 return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.North, neighbourCoord, out atom);
             }
-            else if (chunkCoord.y < 0)
+            if (chunkCoord.y < 0)
             {
-				neighbour = neighbours.South;
                 neighbourCoord.y += Space.chunkSize;
                 return SafeGetAtomFromPotentialChunk(atomBuffers, neighbours.South, neighbourCoord, out atom);
             }

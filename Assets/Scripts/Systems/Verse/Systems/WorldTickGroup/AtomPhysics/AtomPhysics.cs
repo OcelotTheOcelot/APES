@@ -6,9 +6,11 @@ namespace Verse
 {
 	public static class AtomPhysics
 	{
-		public static readonly float maxVelocity = 32f;
-		public static readonly float gravity = 1f;//9.8f;
-		public static readonly float perTickGravity = -gravity / 60f;
+		public static readonly float motionPerTick = 1f;
+
+		public static readonly float maxSpeed = 32f;
+		public static readonly float gravity = 9.8f;
+		public static readonly float perTickGravity = -gravity / 120f;
 
 		public static readonly float halfSqrt2 = .70710678118f;
 		public static readonly float2 velE = new(1f, 0f);
@@ -28,14 +30,19 @@ namespace Verse
 		public static float2 ReflectAgainst45(float2 v, int normalX, int normalY) =>
 			(normalX * normalY >= 0) ? new(-v.y, -v.x) : new(v.y, v.x);
 
+		public static int2 RoundToCoord(float2 v) => math.int2(math.round(math.abs(v)) * math.sign(v));
+
+		public readonly static float2 maxDisplacement = new(maxSpeed - 1);
+		public readonly static float2 minDisplacement = new(-(maxSpeed - 1));
+
 		public static int Hash(int value)
 		{
-            value = (value ^ 61) ^ (value >> 16);
-            value += (value << 3);
-            value ^= (value >> 4);
-            value *= 0x27d4eb2d;
-            value ^= (value >> 15);
-            return value;
-        }
+			value = (value ^ 61) ^ (value >> 16);
+			value += (value << 3);
+			value ^= (value >> 4);
+			value *= 0x27d4eb2d;
+			value ^= (value >> 15);
+			return value;
+		}
 	}
 }

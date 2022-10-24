@@ -26,7 +26,7 @@ namespace Verse
 		public readonly static int totalCellsInChunk = chunkSize * chunkSize;
 		public readonly static int totalCellsInRegion = regionSize * regionSize;
 
-		public struct Tag : IComponentData { }
+        public struct Tag : IComponentData { }
 
 		public struct Bounds : IComponentData
 		{
