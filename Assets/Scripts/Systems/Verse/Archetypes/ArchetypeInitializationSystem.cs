@@ -29,18 +29,12 @@ namespace Verse
 				ComponentType.ReadWrite<Atom.Matter>(),
 				ComponentType.ReadWrite<Atom.Color>(),
 				ComponentType.ReadWrite<Atom.Temperature>(),
-				ComponentType.ReadWrite<Atom.Velocity>()
+				
+				ComponentType.ReadWrite<Atom.Dynamics>()
             };
-			ComponentType[] particleComponents = new[]
-			{
-				ComponentType.ReadWrite<Particle.OriginalAtom>(),
-				ComponentType.ReadWrite<Particle.Velocity>(),
-				ComponentType.ReadWrite<Particle.Position>()
-			};
 
 			Archetypes.RegisterArchetypes(
-				atom: EntityManager.CreateArchetype(atomComponents),
-				particle: EntityManager.CreateArchetype(particleComponents)
+				atom: EntityManager.CreateArchetype(atomComponents)
 			);
 
 			Enabled = false;

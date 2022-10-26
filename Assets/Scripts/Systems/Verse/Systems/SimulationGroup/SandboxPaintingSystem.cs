@@ -14,9 +14,7 @@ namespace Verse
 	{
 		public InputActions Actions => PlayerInput.Actions;
 
-		private Entity space;
 		private EntityQuery chunkQueery;
-		private BufferLookup<AtomBufferElement> atomBuffers;
 		
 		private EndSimulationEntityCommandBufferSystem commandBufferSystem;
 
@@ -30,8 +28,6 @@ namespace Verse
 
 			Actions.Sandbox.BrushSize.performed += (ctx) => InputBrushSize(ctx.ReadValue<float>());
 
-			atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>();
-
 			chunkQueery = GetEntityQuery(ComponentType.ReadWrite<Chunk.DirtyArea>());
 
 			commandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
@@ -40,8 +36,6 @@ namespace Verse
 		protected override void OnStartRunning()
 		{
 			base.OnStartRunning();
-
-			space = GetSingletonEntity<Space.Tag>();
 
 			SetSingleton(new Sandbox.Painting.Matter { matter = MatterLibrary.Get("water") });
 		}
@@ -61,8 +55,8 @@ namespace Verse
 
 			Coord spaceCoord = SpaceCursorSystem.Coord;
 
-			int brushSize = GetSingleton<Sandbox.Painting.Brush>().size;
-			int inflatedSize = brushSize + 1;
+			Sandbox.Painting.Brush brush = GetSingleton<Sandbox.Painting.Brush>();
+			int inflatedSize = brush.size + 1;
 			CoordRect brushRect = new(
 				spaceCoord.x - inflatedSize,
 				spaceCoord.y - inflatedSize,
@@ -75,7 +69,7 @@ namespace Verse
 			{
 				handle = new EraseJob
 				{
-					brushSize = brushSize,
+					brushSize = brush.size,
 					spaceBrushRect = brushRect,
 					spaceCoord = spaceCoord,
 					ecb = commandBuffer
@@ -85,7 +79,7 @@ namespace Verse
 			{
 				handle = new PaintJob
 				{
-					brushSize = brushSize,
+					brush = brush,
 					spaceBrushRect = brushRect,
 					spaceCoord = spaceCoord,
 					atomArchetype = Archetypes.Atom,
@@ -179,7 +173,7 @@ namespace Verse
 			[ReadOnly]
 			public Coord spaceCoord;
 			[ReadOnly]
-			public int brushSize;
+			public Sandbox.Painting.Brush brush;
 			[ReadOnly]
 			public Entity matter;
 			[ReadOnly]
@@ -208,7 +202,8 @@ namespace Verse
 
 				Coord chunkCoord = spaceCoord - spatialIndex.origin;
 				DynamicBuffer<AtomBufferElement> newBuffer = ecb.CloneBuffer(entityInQueryIndex, chunk, atoms);
-				
+
+				int brushSize = brush.size;
 				if (brushSize == 0)
 				{
 					CreateAtom(chunkCoord, atoms, newBuffer, sortKey: entityInQueryIndex);
@@ -249,9 +244,11 @@ namespace Verse
 				ecb.SetComponent(sortKey, newAtom, new Atom.Temperature { value = creationData.temperature });
 				ecb.SetComponent<Atom.Color>(sortKey, newAtom, Utils.Pick(matterColors[matter], tick + coord.y*Space.chunkSize + coord.x));
 
-				// Velocity testing
-				float xVel = math.sin(tick / math.PI) * .5f;
-				ecb.SetComponent(sortKey, newAtom, new Atom.Velocity(new float2(xVel, 0f)));
+				if (brush.spinkle > 0f)
+				{
+					float xVel = math.sin(tick / math.PI) * brush.spinkle;
+					ecb.SetComponent(sortKey, newAtom, new Atom.Dynamics(new float2(xVel, 0f)));
+				}
 
 				newAtoms.SetAtom(coord, newAtom);
 			}

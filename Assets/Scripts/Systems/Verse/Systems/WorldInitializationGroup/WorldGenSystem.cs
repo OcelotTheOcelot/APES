@@ -31,7 +31,7 @@ namespace Verse.WorldGen
 
 			endSimulationEntityCommandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
 
-        }
+		}
 
 		protected override void OnStartRunning()
 		{
@@ -117,10 +117,11 @@ namespace Verse.WorldGen
 
 				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
-
-                if (spaceCoord.y >= terrainGenerationData.waterTestHeight)
-                    CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
-            }
+				else if (spaceCoord.y >= terrainGenerationData.waterTestHeight)
+					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
+				else if (terrainGenerationData.fillAir)
+					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.airMatter);
+			}
 
 			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord chunkCoord, Entity matter)
 			{

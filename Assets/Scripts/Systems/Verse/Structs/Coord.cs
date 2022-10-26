@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,10 +26,10 @@ namespace Verse
 			set => xy.y = value;
 		}
 
-		public int Product => x * y;
-		public int Sum => x + y;
+		public int Dot => x * y;
+		public int Sum => math.csum(xy);
 
-		public Coord(Vector2Int coord) : this(coord.x, coord.y) { }
+        public Coord(Vector2Int coord) : this(coord.x, coord.y) { }
 		public Coord(int2 xy) { this.xy = xy; }
 		public Coord(int x, int y) : this() { xy = new(x, y); }
 		public Coord(int value) : this() { xy = new(value); }

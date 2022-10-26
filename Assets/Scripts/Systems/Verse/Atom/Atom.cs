@@ -29,14 +29,17 @@ namespace Verse
 			public Temperature(float value) { this.value = value; }
 		}
 
-        public struct Velocity : IComponentData
+        public struct Dynamics : IComponentData
         {
-            public float2 value;
+            public float2 velocity;
+            public float2 acceleration;
 
-            public Velocity(float2 value) { this.value = value; }
+			public Dynamics(float2 velocity) : this()
+			{
+				this.velocity = velocity;
+				acceleration = float2.zero;
 
-            public static implicit operator Velocity(float2 value) => new(value);
-            public static implicit operator float2(Velocity velocity) => velocity.value;
-        }
+            }
+		}
     }
 }

@@ -51,16 +51,19 @@ namespace Verse
 		public struct PhysicProperties : IComponentData
 		{
 			public float density;
-		}
+			public float friction;
+			public float elasticity;
+            //public float viscosity;
+            //public float adhesiveness;
+        }
 
-		public enum State
+        public enum State
 		{
-			BoseEinstein,
 			Solid,
-			Liquid,
+			Powder,
+            Liquid,
 			Gaseous,
-			Plasma,
-			Beyond
+			Plasma
 		}
 	}
 }

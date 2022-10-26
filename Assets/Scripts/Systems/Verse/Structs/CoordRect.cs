@@ -80,7 +80,7 @@ namespace Verse
 
 		public int Width => xMax - xMin;
 		public Coord Size => max - min;
-		public int Area => (max - min).Product;
+		public int Area => (max - min).Dot;
 
 		public void Set(Coord min, Coord max)
 		{

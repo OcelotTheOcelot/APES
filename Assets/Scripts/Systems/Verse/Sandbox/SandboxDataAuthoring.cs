@@ -8,7 +8,7 @@ using Verse;
 public class SandboxDataAuthoring : MonoBehaviour
 {
 	[SerializeField]
-	private int defaultBrushSize;
+	private Sandbox.Painting.Brush defaultBrush;
 
 	[SerializeField]
 	private Sandbox.Controls controls;
@@ -19,7 +19,7 @@ public class SandboxDataAuthoring : MonoBehaviour
 		{
 			AddComponent(authoring.controls);
 			AddComponent(new Sandbox.Painting.Matter());
-			AddComponent(new Sandbox.Painting.Brush() { size = authoring.defaultBrushSize });
+			AddComponent(authoring.defaultBrush);
 		}
 	}
 }
@@ -43,9 +43,11 @@ public static class Sandbox
 			public Entity matter;
 		}
 
+		[Serializable]
 		public struct Brush : IComponentData
 		{
 			public int size;
+			public float spinkle;
 		}
 	}
 }
