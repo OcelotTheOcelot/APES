@@ -9,7 +9,7 @@ using Unity.Entities;
 
 namespace Apes.UI
 {
-	public class MatterButton : MonoEcs, IPointerEnterHandler, IPointerExitHandler
+	public class MatterButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 	{
 		[SerializeField]
 		private TMPro.TextMeshProUGUI text;
@@ -27,10 +27,8 @@ namespace Apes.UI
 
 		private SandboxPaintingSystem paintingSystem;
 
-		protected override void Awake()
+		protected void Awake()
 		{
-			base.Awake();
-
 			paintingSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<SandboxPaintingSystem>();
 		}
 

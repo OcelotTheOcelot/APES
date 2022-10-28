@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Entities;
@@ -18,7 +19,18 @@ namespace Verse
 			public Entity South;
 			public Entity SouthEast;
 
-			public void MarkDirty(
+            public void MarkDirty(
+                ref DirtyArea thisChunkArea,
+                ComponentLookup<DirtyArea> dirtyAreas,
+                CoordRect dirtyRect,
+                bool safe
+            )
+            {
+                thisChunkArea.MarkDirty(dirtyRect, safe);
+                MarkDirty(dirtyAreas, dirtyRect, safe: safe);
+            }
+
+            public void MarkDirty(
 				ComponentLookup<DirtyArea> dirtyAreas,
 				CoordRect dirtyRect,
 				bool safe
@@ -61,6 +73,69 @@ namespace Verse
 				dirtyArea.MarkDirty(rect, safe: safe);
 				dirtyAreas[chunk] = dirtyArea;
 			}
-		}
+
+            public bool GetNeighbourAtCoord(Coord coord, out Entity neighbour, out Coord neighbourCoord)
+            {
+                neighbourCoord = coord;
+
+                if (coord.x >= Space.chunkSize)
+                {
+					neighbourCoord.x -= Space.chunkSize;
+                    if (coord.y >= Space.chunkSize)
+					{
+                        neighbourCoord.y -= Space.chunkSize;
+                        neighbour =  NorthEast;
+						return true;
+                    }
+
+                    if (coord.y < 0)
+					{
+                        neighbourCoord.y += Space.chunkSize;
+                        neighbour =  SouthEast;
+						return true;
+                    }
+
+                    neighbour =  East;
+					return true;
+                }
+
+                if (coord.x < 0)
+                {
+					neighbourCoord.x += Space.chunkSize;
+                    if (coord.y >= Space.chunkSize)
+					{
+                        neighbourCoord.y -= Space.chunkSize;
+                        neighbour =  NorthWest;
+						return true;
+                    }
+
+                    if (coord.y < 0)
+					{
+                        neighbourCoord.y += Space.chunkSize;
+                        neighbour =  SouthWest;
+						return true;
+                    }
+
+                    neighbour =  West;
+                    return true;
+                }
+
+                if (coord.y >= Space.chunkSize)
+				{
+					neighbourCoord.y -= Space.chunkSize;
+                    neighbour =  North;
+                    return true;
+                }
+                if (coord.y < 0)
+				{
+					neighbourCoord.y += Space.chunkSize;
+                    neighbour =  South;
+                    return true;
+                }
+
+				neighbour = Entity.Null;
+                return false;
+            }
+        }
 	}
 }

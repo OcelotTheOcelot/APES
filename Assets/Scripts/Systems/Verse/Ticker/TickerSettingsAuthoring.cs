@@ -4,13 +4,13 @@ using UnityEngine;
 
 namespace Verse
 {
-	public class TickerDataAuthoring : MonoBehaviour
+	public class TickerSettingsAuthoring : MonoBehaviour
 	{
 		public TickerSettings tickerSettings;
 
-		public class Baker : Baker<TickerDataAuthoring>
+		public class Baker : Baker<TickerSettingsAuthoring>
 		{
-			public override void Bake(TickerDataAuthoring authoring)
+			public override void Bake(TickerSettingsAuthoring authoring)
 			{
 				AddComponent(authoring.tickerSettings);
 			}

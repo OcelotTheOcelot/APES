@@ -7,7 +7,8 @@ using Verse;
 
 namespace Verse
 {
-	public partial class TickerSystemGroup : ComponentSystemGroup
+    // [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
+    public partial class TickerSystemGroup : ComponentSystemGroup
 	{
 		protected override void OnCreate()
 		{
@@ -156,7 +157,7 @@ namespace Verse
 
 	public abstract partial class TickerSystem : SystemBase
 	{
-		private static WorldTickSystemGroup group;
+		private static VerseTickSystemGroup group;
 
 		public static int CurrentTick { get; private set; }
 
@@ -166,7 +167,7 @@ namespace Verse
 
 			RequireForUpdate<Space.Tag>();
 			
-			group = World.GetExistingSystemManaged<WorldTickSystemGroup>();
+			group = World.GetExistingSystemManaged<VerseTickSystemGroup>();
 		}
 
 		protected void Tick()

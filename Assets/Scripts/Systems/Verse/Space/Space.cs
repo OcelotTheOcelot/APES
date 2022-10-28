@@ -15,7 +15,7 @@ namespace Verse
 		public readonly static CoordRect regionBounds = new(0, regionSize - 1);
 
 
-		public readonly static int chunkSize = 64;
+		public readonly static int chunkSize = 64;  // 32 might be more suitable
 		public readonly static float chunkPerCell = 1f / chunkSize;
 		public readonly static int chunksPerRegion = regionSize / chunkSize;
 		public readonly static CoordRect chunkBounds = new(0, chunkSize - 1);
@@ -23,8 +23,8 @@ namespace Verse
 		public readonly static float cellsPerMeter = 20f;
 		public readonly static float metersPerCell = 1f / cellsPerMeter;
 
-        public readonly static int totalCellsInChunk = chunkSize * chunkSize;
-        public readonly static int totalCellsInRegion = regionSize * regionSize;
+		public readonly static int totalCellsInChunk = chunkSize * chunkSize;
+		public readonly static int totalCellsInRegion = regionSize * regionSize;
 
         public struct Tag : IComponentData { }
 
@@ -86,7 +86,7 @@ namespace Verse
 			var regions = dstManager.GetBuffer<RegionBufferElement>(space);
 			foreach (var region in regions)
 			{
-				if (dstManager.GetComponentData<Region.SpatialIndex>(region).index != targetRegionIndex.index)
+				if (!dstManager.GetComponentData<Region.SpatialIndex>(region).index.Equals(targetRegionIndex.index))
 					continue;
 
 				outputRegion = region;
@@ -106,9 +106,11 @@ namespace Verse
 				Mathf.FloorToInt(spaceCoord.y * regionPerCell)
 			);
 
-		public static Coord WorldToSpace(LocalToWorldTransform transform, float3 worldPos)
+		public static Coord WorldToSpaceCoord(LocalToWorldTransform spaceTransform, float3 worldPos) =>
+			WorldToSpaceCoord(spaceTransform.Value.Position, worldPos);
+		public static Coord WorldToSpaceCoord(float3 spaceOriginWorldPos, float3 worldPos)
 		{
-			float3 localPos = worldPos - transform.Value.Position;
+			float3 localPos = worldPos - spaceOriginWorldPos;
 			localPos *= cellsPerMeter;
 
 			return new Coord(

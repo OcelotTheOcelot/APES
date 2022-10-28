@@ -30,6 +30,7 @@ namespace Verse.WorldGen
 			regionQuery.AddSharedComponentFilter(new Region.Processing { state = Region.Processing.State.PendingGeneration });
 
 			endSimulationEntityCommandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
+
 		}
 
 		protected override void OnStartRunning()
@@ -37,7 +38,6 @@ namespace Verse.WorldGen
 			base.OnStartRunning();
 
 			noise = new NativeArray<float>(Space.regionSize, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-
 		}
 
 		protected override void OnUpdate()
@@ -94,9 +94,7 @@ namespace Verse.WorldGen
 			{
 				Coord chunkOrigin = regionalIndexes[chunk].origin;
 
-				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.SetBuffer<Chunk.AtomBufferElement>(chunk);
-				foreach (Chunk.AtomBufferElement oldAtom in atomBuffers[chunk])
-					atomBuffer.Add(oldAtom);
+				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.CloneBuffer<Chunk.AtomBufferElement>(chunk, atomBuffers[chunk]);
 
 				foreach (Coord chunkCoord in Enumerators.GetSquare(Space.chunkSize))
 					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);
@@ -119,10 +117,11 @@ namespace Verse.WorldGen
 
 				if (spaceCoord.y <= terrainGenerationData.terrainHeight + additiveHeight)
 					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.soilMatter);
-
-                if (spaceCoord.y >= 512 * 3)
-                    CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
-            }
+				else if (spaceCoord.y >= terrainGenerationData.waterTestHeight)
+					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.waterMatter);
+				else if (terrainGenerationData.fillAir)
+					CreateAtom(atomBuffer, chunkCoord, terrainGenerationData.airMatter);
+			}
 
 			private void CreateAtom(DynamicBuffer<Chunk.AtomBufferElement> atomBuffer, Coord chunkCoord, Entity matter)
 			{

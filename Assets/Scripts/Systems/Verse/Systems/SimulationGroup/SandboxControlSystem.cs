@@ -3,6 +3,7 @@ using Unity.Entities;
 using Apes.Input;
 using Apes.Camera;
 using Apes.UI;
+using System;
 
 namespace Verse
 {
@@ -28,7 +29,12 @@ namespace Verse
 			RequireForUpdate<Sandbox.Controls>();
 
 			zoomDifference = CameraController.maxOrthographicSize - CameraController.minOrthographicSize;
+
+			Actions.Sandbox.PanCamera.performed += (ctx) => InputPanning(ctx.ReadValue<float>());
+			Actions.Sandbox.PanCamera.canceled += (ctx) => InputPanning(ctx.ReadValue<float>());
+			Actions.Sandbox.PanCamera.started += (ctx) => InputPanning(ctx.ReadValue<float>());
 		}
+
 
 		protected override void OnStartRunning()
 		{
@@ -55,6 +61,7 @@ namespace Verse
 
 			InputMove(Actions.Sandbox.MoveCamera.ReadValue<Vector2>(), delta);
 			InputZoom(Actions.Sandbox.ZoomCamera.ReadValue<float>(), delta);
+
 		}
 
 		private void InputZoom(float inputZoomValue, float delta)
@@ -79,5 +86,7 @@ namespace Verse
 
 			CameraController.Instance.Move(delta * movement);
 		}
+
+		private void InputPanning(float value) => isPanning = value > 0f;
 	}
 }

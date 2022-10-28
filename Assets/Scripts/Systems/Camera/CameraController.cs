@@ -156,7 +156,7 @@ namespace Apes.Camera
 		/// <returns>Cursor position in the world or Vector3.zero in case of error.</returns>
 		public static Vector3 GetWorldCursorPos(float heightOffset = 0)
 		{
-			Plane plane = new Plane(Vector3.up, heightOffset);
+			Plane plane = new(Vector3.up, heightOffset);
 			Ray ray = Instance.Camera.ScreenPointToRay(Mouse.current.position.ReadValue());
 			if (plane.Raycast(ray, out float distance))
 				return ray.GetPoint(distance);

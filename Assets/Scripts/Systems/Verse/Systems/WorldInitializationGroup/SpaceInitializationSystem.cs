@@ -10,8 +10,6 @@ namespace Verse
 	public partial class SpaceInitializationSystem : SystemBase
 	{
 		private const float defaultPixelsPerMeter = 100f;
-		// Guess this definition has to be relocated somewhere else
-		private EntityArchetype chunkArchetype;
 
 		private Entity space;
 
@@ -20,18 +18,6 @@ namespace Verse
 			base.OnCreate();
 
 			RequireForUpdate<Space.Tag>();
-
-			chunkArchetype = EntityManager.CreateArchetype(
-				ComponentType.ReadWrite<Chunk.Region>(),
-				ComponentType.ReadWrite<Chunk.RegionalIndex>(),
-				ComponentType.ReadWrite<Chunk.SpatialIndex>(),
-				ComponentType.ReadWrite<Chunk.DirtyArea>(),
-				ComponentType.ReadWrite<Chunk.ColliderStatus>(),
-				ComponentType.ReadWrite<Chunk.Neighbourhood>(),
-				ComponentType.ReadWrite<Chunk.ProcessingBatchIndex>(),
-				ComponentType.ReadWrite<Chunk.AtomBufferElement>(),
-				ComponentType.ReadWrite<MeshCollider>()
-			);
 		}
 
 		protected override void OnStartRunning()
@@ -115,7 +101,7 @@ namespace Verse
 				EntityManager.SetSharedComponentManaged(chunk, new Chunk.ProcessingBatchIndex(regionalPos));
 
 				var atoms = EntityManager.GetBuffer<Chunk.AtomBufferElement>(chunk);
-				for (int i = 0; i < Space.chunkSize * Space.chunkSize; i++)
+				for (int i = 0; i < Space.totalCellsInChunk; i++)
 					atoms.Add(Entity.Null);
 
 				// Don't you event think about relocating this line unless you're transferring the system to ECB.
@@ -234,6 +220,7 @@ namespace Verse
 				thisNeighbourhood.SouthWest = southWesternChunk;
 				southWesternNeighbourhood.NorthEast = thisChunk;
 				EntityManager.SetComponentData(southWesternChunk, southWesternNeighbourhood);
+				EntityManager.SetComponentData(thisChunk, thisNeighbourhood);
 			}
 
 			if (Space.GetRegionByIndex(EntityManager, space, regionPos + Coord.southEast, out Entity southEasternRegion))
