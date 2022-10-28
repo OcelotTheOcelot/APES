@@ -99,6 +99,8 @@ namespace Verse
 			};
 
 			/// END OF TESTING SECTION
+
+			Enabled = false;
 		}
 
 		public struct Segment

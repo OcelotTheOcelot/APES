@@ -36,17 +36,17 @@ namespace Verse
 		{
 			int tick = TickerSystem.CurrentTick;
 
-			var matters = GetComponentLookup<Atom.Matter>(isReadOnly: true);
-			var states = GetComponentLookup<Matter.AtomState>(isReadOnly: true);
-			var physProps = GetComponentLookup<Matter.PhysicProperties>(isReadOnly: true);
-			var velocities = GetComponentLookup<Dynamics>();
-			var atomBuffers = GetBufferLookup<AtomBufferElement>();
+            var matters = GetComponentLookup<Atom.Matter>(isReadOnly: true);
+            var states = GetComponentLookup<Matter.AtomState>(isReadOnly: true);
+            var physProps = GetComponentLookup<Matter.PhysicProperties>(isReadOnly: true);
+            var velocities = GetComponentLookup<Dynamics>();
+            var atomBuffers = GetBufferLookup<AtomBufferElement>();
 
-			var dirtyAreas = GetComponentLookup<DirtyArea>();
+            var dirtyAreas = GetComponentLookup<DirtyArea>();
 
-			JobHandle jobHandle = default;
+            JobHandle jobHandle = default;
 			for (int i = 0; i < processingBatches; i++)
-			{
+            {
 				physicsQuery.SetSharedComponentFilter(new ProcessingBatchIndex { batchIndex = i });
 
 				jobHandle = new ProcessChunkAtomsJob
@@ -58,8 +58,7 @@ namespace Verse
 					lookupAtoms = atomBuffers,
 					lookupDirtyArea = dirtyAreas,
 					//dynamicsOf = velocities
-				}.ScheduleParallel(physicsQuery, jobHandle);
-				jobHandle.Complete();
+				}.ScheduleParallel(physicsQuery, JobHandle.CombineDependencies(jobHandle, Dependency));
 			}
 		}
 	}

@@ -365,7 +365,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   terrainHeight: 1024
   hillsHeight: 16
-  waterTestHeight: 1536
+  waterTestHeight: 2048
   soilMatter: {fileID: 7989219015599758964, guid: d4ca744146d1abe448fa4cc69d9e07fa, type: 3}
   graniteMatter: {fileID: 7989219015599758964, guid: 128843bbda6f7bc4b96854bba9b9a89a, type: 3}
   waterMatter: {fileID: 7989219015599758964, guid: b4cd090bbb716384db32d90087c37189, type: 3}
