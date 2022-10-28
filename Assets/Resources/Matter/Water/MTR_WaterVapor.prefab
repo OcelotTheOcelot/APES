@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: id
-      value: air
+      value: wtr_vapor
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: group
@@ -22,11 +22,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: density
-      value: 1.225
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: displayName
-      value: air
+      value: water vapor
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: mainColor.rgba
@@ -38,11 +38,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: defaultTemperature
-      value: 20
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: colors.Array.data[0].rgba
-      value: 3573546968
+      value: 816340480
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: colors.Array.data[1].rgba
@@ -54,7 +54,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3817715945068467748, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: m_Name
-      value: MTR_Air
+      value: MTR_WaterVapor
       objectReference: {fileID: 0}
     - target: {fileID: 3817715945068467751, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: m_RootOrder

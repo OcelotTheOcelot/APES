@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Entities.Conversion;
 using UnityEngine;
 
 namespace Verse
@@ -17,11 +18,11 @@ namespace Verse
 
 			EntityQueryDesc desc = new()
 			{
-				All = new[] { ComponentType.ReadOnly<Matter.Id>() },
+				All = new[] { ComponentType.ReadOnly<Matter.StringId>() },
 				Options = EntityQueryOptions.IncludePrefab
 			};
 
-			matterQuery = GetEntityQuery(desc); 
+			matterQuery = GetEntityQuery(desc);
 		}
 
 		protected override void OnStartRunning()
@@ -39,9 +40,10 @@ namespace Verse
 
 		public partial struct RegisterMaterialJob : IJobEntity
 		{
-			public void Execute(Entity matter, in Matter.Id id)
+			public void Execute(Entity matter, in Matter.StringId stringId, ref Matter.RuntimeId id)
 			{
-				MatterLibrary.Add(id.id.ToString(), matter);
+				if (MatterLibrary.Add(stringId.value.ToString(), matter, out int newId))
+					id.value = newId;
 			}
 		}
 	}

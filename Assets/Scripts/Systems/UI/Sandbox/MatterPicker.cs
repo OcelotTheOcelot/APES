@@ -21,13 +21,13 @@ namespace Apes.UI
 		{
 			EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
-			foreach (KeyValuePair<string, Entity> pair in MatterLibrary.Pairs)
-				AddMatter(entityManager, pair.Key, pair.Value);
+			foreach (Entity matter in MatterLibrary.Matters)
+				AddMatter(entityManager, matter);
 		}
 
-		private void AddMatter(EntityManager entityManager, string id, Entity matter)
+		private void AddMatter(EntityManager entityManager, Entity matter)
 		{
-			string groupId = entityManager.GetComponentData<Matter.Group>(matter).group.ToString();
+			string groupId = entityManager.GetComponentData<Matter.Group>(matter).groupName.ToString();
 
 			if (!groups.TryGetValue(groupId, out MatterGroup group))
 			{
@@ -36,7 +36,7 @@ namespace Apes.UI
 			}
 
 			MatterButton button = Instantiate(buttonPrefab, group.transform);
-			button.AssignMatter(matter, id);
+			button.AssignMatter(matter, entityManager.GetComponentData<Matter.StringId>(matter).value.ToString());
 		}
 	}
 }

@@ -15,7 +15,7 @@ namespace Verse
 		public readonly static CoordRect regionBounds = new(0, regionSize - 1);
 
 
-		public readonly static int chunkSize = 64;
+		public readonly static int chunkSize = 64;  // 32 might be more suitable
 		public readonly static float chunkPerCell = 1f / chunkSize;
 		public readonly static int chunksPerRegion = regionSize / chunkSize;
 		public readonly static CoordRect chunkBounds = new(0, chunkSize - 1);

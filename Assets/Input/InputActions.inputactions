@@ -1112,6 +1112,39 @@
                     "isPartOfComposite": false
                 },
                 {
+                    "name": "+-",
+                    "id": "6c224bdd-5898-4146-a63d-dcf6332e3b5b",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ZoomCamera",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "a4405636-ec8c-46e0-983e-55c02c16ed98",
+                    "path": "<Keyboard>/minus",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ZoomCamera",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "85c7bab8-b57a-4509-a49d-0c48c796681b",
+                    "path": "<Keyboard>/equals",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ZoomCamera",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "",
                     "id": "b35b0fa0-409f-4451-a141-27681bc7e961",
                     "path": "<Mouse>/delta",

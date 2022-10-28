@@ -5,7 +5,6 @@ using static Verse.Matter;
 
 namespace Verse
 {
-	// [CreateAssetMenu(fileName = "MatterData", menuName = "APEZ/Matter", order = 1)]
 	public class MatterDataAuthoring : MonoBehaviour
 	{
 		// Must be unique
@@ -41,9 +40,10 @@ namespace Verse
 		{
 			public override void Bake(MatterDataAuthoring authoring)
 			{
-				AddComponent(new Id { id = authoring.id });
-				AddComponent(new Group { group = authoring.group });
-				AddComponent(new DisplayName { name = authoring.displayName });
+				AddComponent(new StringId { value = authoring.id });
+				AddComponent(new RuntimeId());
+				AddComponent(new Group { groupName = authoring.group });
+				AddComponent(new DisplayName { value = authoring.displayName });
 
 				AddComponent(new AtomState { value = authoring.state });
 				AddComponent(new Creation { temperature = authoring.defaultTemperature });

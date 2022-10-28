@@ -13,9 +13,14 @@ namespace Verse
 			dstManager.GetComponentData<AtomState>(matter).value;
 
 
-		public struct Id : IComponentData
+		public struct StringId : IComponentData { public FixedString32Bytes value; }
+		public struct RuntimeId : IComponentData
 		{
-			public FixedString32Bytes id;
+			public int value;
+			public RuntimeId(int value)
+			{
+				this.value = value;
+			}
 		}
 
 		public struct ColorBufferElement : IBufferElementData
@@ -28,40 +33,26 @@ namespace Verse
 			public static implicit operator Atom.Color(ColorBufferElement matterColor) => new() { value = matterColor.color };
 		}
 
-		public struct AtomState : IComponentData
-		{
-			public State value;
-		}
-
-		public struct Creation : IComponentData
-		{
-			public float temperature;
-		}
-
-		public struct Group : IComponentData
-		{
-			public FixedString32Bytes group;
-		}
-
-		public struct DisplayName : IComponentData
-		{
-			public FixedString32Bytes name;
-		}
+		public struct AtomState : IComponentData { public State value; }
+		public struct Group : IComponentData { public FixedString32Bytes groupName; }
+		public struct DisplayName : IComponentData { public FixedString32Bytes value; }
+		public struct Creation : IComponentData { public float temperature; }
 
 		public struct PhysicProperties : IComponentData
 		{
 			public float density;
 			public float friction;
 			public float elasticity;
-            //public float viscosity;
-            //public float adhesiveness;
-        }
+			//public float viscosity;
+			//public float adhesiveness;
+		}
 
-        public enum State
+		public enum State
 		{
 			Solid,
 			Powder,
-            Liquid,
+			Liquid,
+			Particle,
 			Gaseous,
 			Plasma
 		}

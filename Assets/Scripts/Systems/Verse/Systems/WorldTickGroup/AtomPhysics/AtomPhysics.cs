@@ -64,9 +64,7 @@ namespace Verse
 		public static float FourierOneBy(float denominator)
 		{
 			throw new System.NotImplementedException();
-			const int i = 3;
-			const float omega = 0f;
-            return -i * 1.25331413732f * math.sign(omega);
+            // return -i * 1.25331413732f * math.sign(omega);
         }
 
         //public static int Hash(int value)

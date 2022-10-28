@@ -5,27 +5,28 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: id
-      value: water
+      value: smoke
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: group
-      value: liquids
+      value: gases
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: state
-      value: 2
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: density
-      value: 1000
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: displayName
-      value: water
+      value: smoke
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: mainColor.rgba
@@ -33,7 +34,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: colors.Array.size
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: defaultTemperature
@@ -41,19 +42,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: colors.Array.data[0].rgba
-      value: 1688755712
+      value: 3476897085
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: colors.Array.data[1].rgba
-      value: 1688764160
+      value: 4282738048
       objectReference: {fileID: 0}
     - target: {fileID: 583821625403220069, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: colors.Array.data[2].rgba
-      value: 1688158464
+      value: 4282738048
       objectReference: {fileID: 0}
     - target: {fileID: 3817715945068467748, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: m_Name
-      value: MTR_Water
+      value: MTR_Smoke
       objectReference: {fileID: 0}
     - target: {fileID: 3817715945068467751, guid: aeba99421feea94439d13d092cfea2a7, type: 3}
       propertyPath: m_RootOrder
@@ -100,4 +101,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: aeba99421feea94439d13d092cfea2a7, type: 3}

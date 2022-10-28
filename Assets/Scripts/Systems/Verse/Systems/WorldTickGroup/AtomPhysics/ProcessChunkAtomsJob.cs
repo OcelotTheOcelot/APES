@@ -106,7 +106,7 @@ namespace Verse
 						break;
 
 					case Matter.State.Liquid:
-						ProcessLiquid(ref dirtyArea, atoms, neighbours, matter, physProps, new Coord(x, y));
+						ProcessLiquidOld(ref dirtyArea, atoms, neighbours, matter, physProps, new Coord(x, y));
 						break;
 
 					case Matter.State.Gaseous:
@@ -118,7 +118,7 @@ namespace Verse
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			private void ProcessLiquid(
+			private void ProcessLiquidNew(
 				ref DirtyArea dirtyArea,
 				DynamicBuffer<AtomBufferElement> atoms,
 				Neighbourhood neighbours,
@@ -127,14 +127,56 @@ namespace Verse
 				Coord atomCoord
 			)
 			{
-				Coord southCoord = atomCoord + Coord.south;
+				int atomIndex = atomCoord.y * Space.chunkSize + atomCoord.x;
+				Coord otherCoord = atomCoord + Coord.south;
+				if (atoms.GetAtomNeighbourFallback(
+					lookupAtoms, neighbours, otherCoord,
+					out Entity sideAtom, out DynamicBuffer<AtomBufferElement> swapAtoms, out Coord swapCoord
+					) && IsPassable(sideAtom, atomMatter, atomProps)
+				)
+				{
+                    atoms.Swap(atomIndex, swapAtoms, swapCoord);
+
+					CoordRect dirtyRect = new(otherCoord + Coord.southWest, atomCoord + Coord.northEast);
+					neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, dirtyRect, safe: true);
+
+					return;
+				}
+
+                const int liquidity = 4;
+
+                int xDir = ((hashKeyAddition + Hash(atomIndex)) << 1) - 1;
+				for (int j = 0; j < 2; j++)
+				{
+                    Coord sideCoord = atomCoord;
+                    sideCoord.x += xDir;
+
+					throw new System.NotImplementedException();
+
+					xDir = -xDir;
+                }
+			}
+
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			private void ProcessLiquidOld(
+				ref DirtyArea dirtyArea,
+				DynamicBuffer<AtomBufferElement> atoms,
+				Neighbourhood neighbours,
+				Entity atomMatter,
+				Matter.PhysicProperties atomProps,
+				Coord atomCoord
+			)
+			{
+				int atomIndex = (atomCoord.y * Space.chunkSize) + atomCoord.x;
+
+                Coord southCoord = atomCoord + Coord.south;
 				if (atoms.GetAtomNeighbourFallback(
 					lookupAtoms, neighbours, southCoord,
 					out Entity bottomAtom, out DynamicBuffer<AtomBufferElement> otherAtoms, out Coord otherCoord
 					) && IsPassable(bottomAtom, atomMatter, atomProps)
 				)
 				{
-					AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
+                    atoms.Swap(atomIndex, otherAtoms, otherCoord);
 
 					CoordRect dirtyRect = new(southCoord + Coord.southWest, atomCoord + Coord.northEast);
 					neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, dirtyRect, safe: true);
@@ -142,7 +184,7 @@ namespace Verse
 					return;
 				}
 
-				int xDir = ((((atomCoord.y * Space.chunkSize) + atomCoord.x + tick) & 0b1) << 1)  -1;
+				int xDir = (((atomIndex + tick) & 0b1) << 1)  -1;
 				Coord mainSide = atomCoord, altSide = atomCoord;
 
 				mainSide.x += xDir;

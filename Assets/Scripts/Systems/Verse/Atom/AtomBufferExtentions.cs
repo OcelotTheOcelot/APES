@@ -208,7 +208,7 @@ namespace Verse
 		}
 
         public static void Swap(
-            DynamicBuffer<AtomBufferElement> atomsA, int indexA,
+            this DynamicBuffer<AtomBufferElement> atomsA, int indexA,
             DynamicBuffer<AtomBufferElement> atomsB, Coord coordB
         )
         {
