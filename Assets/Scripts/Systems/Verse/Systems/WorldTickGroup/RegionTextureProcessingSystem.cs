@@ -66,7 +66,7 @@ namespace Verse
 				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(isReadOnly: true),
 
 				pixelData = pixelData
-			}.Schedule(textureQuery, Dependency).Complete();
+			}.Schedule(textureQuery, Dependency);//.Complete();
 			new LoadPixelDataJob
 			{
 				inputData = pixelData

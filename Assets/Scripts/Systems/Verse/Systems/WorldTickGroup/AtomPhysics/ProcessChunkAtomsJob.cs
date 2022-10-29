@@ -106,7 +106,7 @@ namespace Verse
 						break;
 
 					case Matter.State.Liquid:
-						ProcessLiquidOld(ref dirtyArea, atoms, neighbours, matter, physProps, new Coord(x, y));
+						ProcessLiquidNew(ref dirtyArea, atoms, neighbours, matter, physProps, new Coord(x, y));
 						break;
 
 					case Matter.State.Gaseous:
@@ -126,36 +126,94 @@ namespace Verse
 				Matter.PhysicProperties atomProps,
 				Coord atomCoord
 			)
-			{
-				int atomIndex = atomCoord.y * Space.chunkSize + atomCoord.x;
-				Coord otherCoord = atomCoord + Coord.south;
-				if (atoms.GetAtomNeighbourFallback(
-					lookupAtoms, neighbours, otherCoord,
-					out Entity sideAtom, out DynamicBuffer<AtomBufferElement> swapAtoms, out Coord swapCoord
-					) && IsPassable(sideAtom, atomMatter, atomProps)
-				)
-				{
-                    atoms.Swap(atomIndex, swapAtoms, swapCoord);
+            {
+                int atomIndex = (atomCoord.y * Space.chunkSize) + atomCoord.x;
 
-					CoordRect dirtyRect = new(otherCoord + Coord.southWest, atomCoord + Coord.northEast);
-					neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, dirtyRect, safe: true);
+                Coord southCoord = atomCoord + Coord.south;
+                if (atoms.GetAtomNeighbourFallback(
+                    lookupAtoms, neighbours, southCoord,
+                    out Entity bottomAtom, out DynamicBuffer<AtomBufferElement> otherAtoms, out Coord otherCoord
+                    ) && IsPassable(bottomAtom, atomMatter, atomProps)
+                )
+                {
+                    atoms.Swap(atomIndex, otherAtoms, otherCoord);
 
-					return;
-				}
+                    CoordRect dirtyRect = new(southCoord + Coord.southWest, atomCoord + Coord.northEast);
+                    neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, dirtyRect, safe: true);
 
-                const int liquidity = 4;
-
-                int xDir = ((hashKeyAddition + Hash(atomIndex)) << 1) - 1;
-				for (int j = 0; j < 2; j++)
-				{
-                    Coord sideCoord = atomCoord;
-                    sideCoord.x += xDir;
-
-					throw new System.NotImplementedException();
-
-					xDir = -xDir;
+                    return;
                 }
-			}
+
+                int xDir = (((atomIndex + tick) & 0b1) << 1) - 1;
+                Coord mainSide = atomCoord, altSide = atomCoord;
+
+                mainSide.x += xDir;
+                bool hasMainSide = atoms.GetAtomNeighbourFallback(
+                    lookupAtoms, neighbours, mainSide,
+                    out Entity mainSideAtom, out DynamicBuffer<AtomBufferElement> mainSwapAtoms, out Coord mainSwapCoord
+                );
+                bool mainSidePassable = hasMainSide && IsPassable(mainSideAtom, atomMatter, atomProps);
+
+                if (mainSidePassable)
+                {
+                    Coord mainBottom = mainSide + Coord.south;
+                    if (
+                        atoms.GetAtomNeighbourFallback(
+                        lookupAtoms, neighbours, mainBottom,
+                        out bottomAtom, out otherAtoms, out otherCoord
+                    ))
+                    {
+                        if (IsPassable(bottomAtom, atomMatter, atomProps))
+                        {
+                            AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
+                            neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, CoordRect.CreateRectBetween(atomCoord, mainBottom, margin: 1), safe: true);
+
+                            return;
+                        }
+                    }
+                }
+
+                altSide.x -= xDir;
+                bool hasAltSide = atoms.GetAtomNeighbourFallback(
+                    lookupAtoms, neighbours, altSide,
+                    out Entity altSideAtom, out DynamicBuffer<AtomBufferElement> altSwapAtoms, out Coord altSwapCoord
+                );
+                bool altSidePassable = hasAltSide && IsPassable(altSideAtom, atomMatter, atomProps);
+
+                if (altSidePassable)
+                {
+                    Coord altBottom = altSide + Coord.south;
+                    if (atoms.GetAtomNeighbourFallback(
+                        lookupAtoms, neighbours, altBottom,
+                        out bottomAtom, out otherAtoms, out otherCoord
+                    ))
+                    {
+                        if (IsPassable(bottomAtom, atomMatter, atomProps))
+                        {
+                            AtomBufferExtention.Swap(atoms, atomCoord, otherAtoms, otherCoord);
+                            neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, CoordRect.CreateRectBetween(atomCoord, altBottom, margin: 1), safe: true);
+
+                            return;
+                        }
+                    }
+                }
+
+                if (mainSidePassable)
+                {
+                    AtomBufferExtention.Swap(atoms, atomCoord, mainSwapAtoms, mainSwapCoord);
+                    neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, CoordRect.CreateRectBetween(atomCoord, mainSide, margin: 1), safe: true);
+
+                    return;
+                }
+
+                if (altSidePassable)
+                {
+                    AtomBufferExtention.Swap(atoms, atomCoord, altSwapAtoms, altSwapCoord);
+                    neighbours.MarkDirty(ref dirtyArea, lookupDirtyArea, CoordRect.CreateRectBetween(atomCoord, altSide, margin: 1), safe: true);
+
+                    return;
+                }
+            }
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private void ProcessLiquidOld(
