@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Verse
 {
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
     public class VerseTickSystemGroup : ComponentSystemGroup
 	{
 		protected override void OnUpdate() { }

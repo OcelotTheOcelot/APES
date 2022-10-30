@@ -48,16 +48,17 @@ namespace Verse
 				DirtyArea dirtyArea = lookupDirtyArea[chunk];
 				if (!dirtyArea.active)
 					return;
-				dirtyArea.active = false;
+				dirtyArea.active = dirtyArea.frameProtection;
+				dirtyArea.frameProtection = false;
 
-				atoms = lookupAtoms[chunk];
+                atoms = lookupAtoms[chunk];
 
 				Coord from = dirtyArea.From, to = dirtyArea.To;
 
 				int oddity = (tick + from.y) & 0b1;
 
 				// Region size should work ok
-				hashKeyAddition = Hash(tick + spatialIndex.origin.y * Space.regionSize + spatialIndex.origin.x);
+				hashKeyAddition = QuickHash(tick + spatialIndex.origin.y * Space.regionSize + spatialIndex.origin.x);
 				int y = from.y;
 				int height = to.y * Space.chunkSize;
 				for (int rowShift = from.y * Space.chunkSize; rowShift <= height; rowShift += Space.chunkSize)

@@ -39,7 +39,7 @@ namespace Verse
 		public readonly static float2 maxDisplacement = new(maxSpeed - 1);
 		public readonly static float2 minDisplacement = new(-(maxSpeed - 1));
 
-        public static int Hash(int key)
+        public static int QuickHash(int key)
 		{
 			key = (key + 0x7ed55d16) + (key << 12);
 			key = (key ^ 0x5761C23C) ^ (key >> 19);
@@ -48,34 +48,23 @@ namespace Verse
 			key = (key + 0x4d7046c5) + (key << 3);
 			key = (key ^ 0x155a4f09) ^ (key >> 16);
 			return key;
-		}
-
-        public static uint Hash(uint key)
-        {
-            key = (key + 0x7ed55d16) + (key << 12);
-            key = (key ^ 0x8761C23C) ^ (key >> 19);
-            key = (key + 0x165667b1) + (key << 5);
-            key = (key + 0xd3a2646c) ^ (key << 9);
-            key = (key + 0xfd7046c5) + (key << 3);
-            key = (key ^ 0xb55a4f09) ^ (key >> 16);
-            return key;
         }
+
+		public static int Hash(int value)
+		{
+			value = (value ^ 61) ^ (value >> 16);
+			value += (value << 3);
+			value ^= (value >> 4);
+			value *= 0x27d4eb2d;
+			value ^= (value >> 15);
+			return value;
+		}
 
 		public static float FourierOneBy(float denominator)
 		{
 			throw new System.NotImplementedException();
             // return -i * 1.25331413732f * math.sign(omega);
         }
-
-        //public static int Hash(int value)
-        //{
-        //	value = (value ^ 61) ^ (value >> 16);
-        //	value += (value << 3);
-        //	value ^= (value >> 4);
-        //	value *= 0x27d4eb2d;
-        //	value ^= (value >> 15);
-        //	return value;
-        //}
 
         public static void PerfectlyInelasticCollision(ref float2 thisVel, ref float2 otherVel) =>
 			thisVel = otherVel = (thisVel + otherVel) * .5f;

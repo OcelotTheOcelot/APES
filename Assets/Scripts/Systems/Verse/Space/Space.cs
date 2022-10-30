@@ -19,22 +19,18 @@ namespace Verse
         public readonly static CoordRect regionBounds = new(0, regionSize - 1);
         public readonly static int chunksPerRegion = regionSize / chunkSize;
 
-        public readonly static float cellsPerMeter = 20f;
-		public readonly static float metersPerCell = 1f / cellsPerMeter;
-
-		public readonly static int totalCellsInChunk = chunkSize * chunkSize;
+        public readonly static int totalCellsInChunk = chunkSize * chunkSize;
 		public readonly static int totalCellsInRegion = regionSize * regionSize;
+
+        public readonly static float cellsPerMeter = 20f;
+        public readonly static float metersPerCell = 1f / cellsPerMeter;
+        public readonly static float defaultPixelsPerMeter = 100f;
 
         public struct Tag : IComponentData { }
 
 		public struct Bounds : IComponentData
 		{
 			public CoordRect spaceGridBounds;
-		}
-
-		public struct Colors : IComponentData
-		{
-			public Color32 emptySpaceColor;
 		}
 
 		public struct Initialization : IComponentData

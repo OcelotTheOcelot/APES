@@ -22,11 +22,11 @@ namespace Verse
 				// Chunk w/o any atoms in it, waiting to be loaded from the disk or received from the server
 				PendingLoading = 2,
 
-				// Chunk that is being actively processed (usually around a player)
-				Active = 3,
+                // Chunk that is being actively processed (usually around a player)
+                Active = 4,
 
 				// Chunk that is put on hold
-				Sleeping = 4
+				Sleeping = 5
 			}
 		}
 

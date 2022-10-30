@@ -28,7 +28,7 @@ namespace Verse
 
 			Actions.Sandbox.BrushSize.performed += (ctx) => InputBrushSize(ctx.ReadValue<float>());
 
-			chunkQueery = GetEntityQuery(ComponentType.ReadWrite<Chunk.DirtyArea>());
+			chunkQueery = GetEntityQuery(ComponentType.ReadWrite<DirtyArea>());
 
 			commandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
 		}
@@ -99,8 +99,6 @@ namespace Verse
 				return;
 			}
 
-			handle.Complete();
-
 			commandBufferSystem.AddJobHandleForProducer(handle);
 		}
 
@@ -148,7 +146,8 @@ namespace Verse
 				}
 
 				dirtyArea.MarkDirty(brushRect, safe: false);
-			}
+				dirtyArea.frameProtection = true;
+            }
 
 			public void DestroyAtom(Coord coord, DynamicBuffer<AtomBufferElement> atoms, int sortKey)
 			{
@@ -219,9 +218,10 @@ namespace Verse
 				}
 
 				dirtyArea.MarkDirty(brushRect, safe: false);
-			}
+				dirtyArea.frameProtection = true;
+            }
 
-			public void CreateAtom(Coord coord, DynamicBuffer<AtomBufferElement> atoms, DynamicBuffer<AtomBufferElement> newAtoms, int sortKey)
+            public void CreateAtom(Coord coord, DynamicBuffer<AtomBufferElement> atoms, DynamicBuffer<AtomBufferElement> newAtoms, int sortKey)
 			{
 				if (!Space.chunkBounds.Contains(coord))
 					return;

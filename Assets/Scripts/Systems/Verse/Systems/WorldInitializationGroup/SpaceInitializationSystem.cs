@@ -9,8 +9,6 @@ namespace Verse
 	[UpdateInGroup(typeof(SpaceInitializationSystemGroup), OrderFirst = true)]
 	public partial class SpaceInitializationSystem : SystemBase
 	{
-		private const float defaultPixelsPerMeter = 100f;
-
 		private Entity space;
 
 		protected override void OnCreate()
@@ -50,7 +48,7 @@ namespace Verse
 
 			LocalToWorldTransform regionTransform = EntityManager.GetComponentData<LocalToWorldTransform>(region);
 			regionTransform.Value.Position += new float3(regionWorldPos, 0f);
-			regionTransform.Value.Scale *= defaultPixelsPerMeter * Space.metersPerCell;
+			regionTransform.Value.Scale *= Space.defaultPixelsPerMeter * Space.metersPerCell;
 			EntityManager.SetComponentData(region, regionTransform);
 			/* LocalToWorld regionTransform = EntityManager.GetComponentData<LocalToWorld>(region);
 				regionTransform.Value = float4x4.TRS(

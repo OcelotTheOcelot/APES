@@ -9,9 +9,6 @@ namespace Verse
 	public class SpaceDataAuthoring : MonoBehaviour
 	{
 		[SerializeField]
-		private Color32 emptySpaceColor;
-
-		[SerializeField]
 		private Vector2Int defaultWorldSize;
 
 		public class Baker : Baker<SpaceDataAuthoring>
@@ -20,7 +17,6 @@ namespace Verse
 			{
 				AddComponent(new Tag());
 				AddComponent(new Space.Bounds());
-				AddComponent(new Colors { emptySpaceColor = authoring.emptySpaceColor });
 				AddComponent(new Initialization { regionCount = authoring.defaultWorldSize / regionSize });
 				AddBuffer<RegionBufferElement>();
 			}

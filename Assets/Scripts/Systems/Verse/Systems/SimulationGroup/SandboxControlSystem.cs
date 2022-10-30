@@ -71,7 +71,9 @@ namespace Verse
 
 			float size = CameraController.minOrthographicSize + zoomDifference * Mathf.Pow(zoomFraction, cameraZoomSmoothing);
 			DebugUI.Instance.MessageText = $"Zoom: {size} ({CameraController.minOrthographicSize} + {zoomDifference} * {zoomFraction}^{cameraZoomSmoothing})";
-			CameraController.Instance.OrthographicSize = size;
+			DebugUI.Instance.MessageText = $"zoom direction: {direction}";
+
+            CameraController.Instance.OrthographicSize = size;
 
 			//Vector2 difference = Camera.main.ScreenToWorldPoint(cursorPos) - CameraController.Instance.transform.position;
 			//CameraController.Instance.Move(difference * size);
