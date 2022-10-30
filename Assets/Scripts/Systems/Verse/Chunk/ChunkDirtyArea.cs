@@ -10,7 +10,8 @@ namespace Verse
 		public struct DirtyArea : IComponentData
 		{
 			public bool active;
-			public CoordRect rect;
+			public bool frameProtection;
+            public CoordRect rect;
 
 			public Coord From => rect.min;
 			public Coord To => rect.max;
@@ -19,11 +20,12 @@ namespace Verse
 
 			public DirtyArea(CoordRect chunkRect)
 			{
-				active = chunkRect.IntersectWith(Space.chunkBounds);
+                active = chunkRect.IntersectWith(Space.chunkBounds);
 				rect = chunkRect;
-			}
+				frameProtection = false;
+            }
 
-			public Coord Size => rect.Size;
+            public Coord Size => rect.Size;
 			public int Area => rect.Area;
 
 			public void MarkDirty(Coord chunkCoord, bool safe = false)

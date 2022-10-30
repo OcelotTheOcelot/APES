@@ -5,11 +5,11 @@ using static Verse.Region;
 
 namespace Verse
 {
-	public class RegionDataAuthoring : MonoBehaviour
+	public class RegionAuthoring : MonoBehaviour
 	{
-		public class Baker : Baker<RegionDataAuthoring>
+		public class Baker : Baker<RegionAuthoring>
 		{
-			public override void Bake(RegionDataAuthoring authoring)
+			public override void Bake(RegionAuthoring authoring)
 			{
 				AddComponent(new SpatialIndex());
 				AddSharedComponentManaged(new Processing());

@@ -43,23 +43,24 @@ namespace Verse.WorldGen
 		protected override void OnUpdate()
 		{
 			EntityCommandBuffer commandBuffer = GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
-			var handle = new GenerateRegionJob()
+			Dependency = new GenerateRegionJob()
 			{
 				terrainGenerationData = GetSingleton<TerrainGenerationData>(),
 
 				dirtyAreas = GetComponentLookup<Chunk.DirtyArea>(),
 				colliders = GetComponentLookup<Chunk.ColliderStatus>(),
 
-				regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(),
-				creationDatas = GetComponentLookup<Matter.Creation>(),
+				regionalIndexes = GetComponentLookup<Chunk.RegionalIndex>(isReadOnly: true),
+				creationDatas = GetComponentLookup<Matter.Creation>(isReadOnly: true),
+				matterColors = GetBufferLookup<Matter.ColorBufferElement>(isReadOnly: true),
+
 				atomBuffers = GetBufferLookup<Chunk.AtomBufferElement>(),
-				matterColors = GetBufferLookup<Matter.ColorBufferElement>(),
+
 				noise = noise,
 				commandBuffer = commandBuffer
 			}.Schedule(regionQuery, Dependency);
-			handle.Complete();
 
-			endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(handle);
+			endSimulationEntityCommandBufferSystem.AddJobHandleForProducer(Dependency);
 		}
 
 		public partial struct GenerateRegionJob : IJobEntity
@@ -94,14 +95,16 @@ namespace Verse.WorldGen
 			{
 				Coord chunkOrigin = regionalIndexes[chunk].origin;
 
-				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.CloneBuffer<Chunk.AtomBufferElement>(chunk, atomBuffers[chunk]);
+				DynamicBuffer<Chunk.AtomBufferElement> atomBuffer = commandBuffer.CloneBuffer(chunk, atomBuffers[chunk]);
 
 				foreach (Coord chunkCoord in Enumerators.GetSquare(Space.chunkSize))
 					ProcessCell(atomBuffer, regionIndex.origin, chunkOrigin, chunkCoord);
 
 				Chunk.DirtyArea area = dirtyAreas[chunk];
 				area.MarkDirty();
-				commandBuffer.SetComponent(chunk, area);
+				area.frameProtection = true;
+
+                commandBuffer.SetComponent(chunk, area);
 
 				Chunk.ColliderStatus collider = colliders[chunk];
 				collider.pendingRebuild = true;

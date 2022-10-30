@@ -1084,7 +1084,7 @@
                     "path": "<Keyboard>/leftBracket",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard&Mouse",
                     "action": "BrushSize",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -1095,7 +1095,7 @@
                     "path": "<Keyboard>/rightBracket",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard&Mouse",
                     "action": "BrushSize",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -1112,7 +1112,7 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "+-",
+                    "name": "1D Axis",
                     "id": "6c224bdd-5898-4146-a63d-dcf6332e3b5b",
                     "path": "1DAxis",
                     "interactions": "",
